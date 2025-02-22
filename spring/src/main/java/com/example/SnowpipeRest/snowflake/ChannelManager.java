@@ -7,6 +7,7 @@ import net.snowflake.ingest.streaming.DropChannelRequest;
 import net.snowflake.ingest.streaming.OpenChannelRequest;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestChannel;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestClient;
+import net.snowflake.ingest.utils.SFException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,13 +66,17 @@ public class ChannelManager {
   /** Removes all channels */
   public void removeAllChannels() {
     for (SnowflakeStreamingIngestChannel channel : cachedChannels.values()) {
-      channel.close();
-      LOGGER.info(
-          "Channel closed: db={} schema={} table={} channel={}",
-          channel.getDBName(),
-          channel.getSchemaName(),
-          channel.getTableName(),
-          channel.getName());
+      try {
+        channel.close();
+        LOGGER.info(
+            "Channel closed: db={} schema={} table={} channel={}",
+            channel.getDBName(),
+            channel.getSchemaName(),
+            channel.getTableName(),
+            channel.getName());
+      } catch (SFException e) {
+        LOGGER.error("Unable to close channel", e);
+      }
       DropChannelRequest request =
           DropChannelRequest.builder(channel.getName())
               .setDBName(channel.getDBName())

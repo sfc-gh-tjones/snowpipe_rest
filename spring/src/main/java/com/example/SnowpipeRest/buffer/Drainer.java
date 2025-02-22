@@ -125,6 +125,15 @@ public class Drainer {
     }
   }
 
+  private void logInvalidChannel(Buffer buffer, SnowflakeStreamingIngestChannel channel) {
+    LOGGER.info(
+        "Attempting to re-open the channel due to being an invalid channel db={} schema={} table={} channel={}",
+        buffer.getDatabase(),
+        buffer.getSchema(),
+        buffer.getTable(),
+        channel.getName());
+  }
+
   /** Santa Cruz hardcore represent! */
   public TerminationReason drain() {
     LOGGER.info(
@@ -139,6 +148,14 @@ public class Drainer {
       SnowflakeStreamingIngestChannel channel =
           ChannelManager.getInstance()
               .getChannelForTable(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+      if (!channel.isValid()) {
+        logInvalidChannel(buffer, channel);
+        ChannelManager.getInstance()
+            .invalidateChannel(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+        channel =
+            ChannelManager.getInstance()
+                .getChannelForTable(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+      }
       String lastSentOffsetToken = null;
 
       while (true) {
