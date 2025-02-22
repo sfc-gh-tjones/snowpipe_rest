@@ -17,7 +17,7 @@ public class DrainManagerTest {
   private void verifyRowsForChannel(TestChannel channel, int maxRows) {
     for (int i = 0; i < maxRows; i++) {
       Pair<Map<String, Object>, String> row = channel.insertedRows.get(i);
-      assertEquals(String.valueOf(i), Utils.getBufferIndexFromOffsetToken(row.getSecond()));
+      assertEquals(i, Utils.getBufferIndexFromOffsetToken(row.getSecond()));
     }
   }
 
