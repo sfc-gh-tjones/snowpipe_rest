@@ -81,7 +81,7 @@ public class IngestEngineConfig {
   public int getMaxSecondsToWaitToDrain() {
     if (maxSecondsToWaitToDrain <= 0) {
       LOGGER.info(
-          "Max records to drain set to 0, default to REST_API_DRAIN_MANAGER_MAX_RECORDS_TO_DRAIN environment variable");
+          "Max records to drain set to 0, default to REST_API_DRAIN_MANAGER_MAX_SECONDS_TO_WAIT_TO_DRAIN environment variable");
       checkEnv("REST_API_DRAIN_MANAGER_MAX_SECONDS_TO_WAIT_TO_DRAIN");
       return (int) getEnv("REST_API_DRAIN_MANAGER_MAX_SECONDS_TO_WAIT_TO_DRAIN");
     }
