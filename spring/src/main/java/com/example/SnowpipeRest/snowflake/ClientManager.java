@@ -60,6 +60,9 @@ public class ClientManager {
           .setProperties(props)
           .build();
     } catch (Exception e) {
+      LOGGER.error(
+          "Unable to create a Client. Likely due to invalid credentials or line of sight (VPN, etc) e={}",
+          e.getMessage());
       throw new RuntimeException(e);
     }
   }

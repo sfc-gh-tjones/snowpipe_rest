@@ -37,20 +37,30 @@ public class Utils {
   }
 
   /** Given a persisted offset token, extract the buffer index */
-  public static int getBufferIndexFromOffsetToken(String offsetToken) {
-    return Integer.valueOf(offsetToken.split("-")[0]);
+  public static long getBufferIndexFromOffsetToken(String offsetToken) {
+    String[] arr = offsetToken.split("-");
+    if (arr.length != 2) {
+      LOGGER.error("Invalid offset token: {}", offsetToken);
+      throw new RuntimeException("Invalid offset token: " + offsetToken);
+    }
+    return Long.parseLong(arr[0].replace("\"", ""));
   }
 
   /** Given a persisted offset token, extract the epoch TS */
-  public static int getEpochTsFromOffsetToken(String offsetToken) {
-    return Integer.valueOf(offsetToken.split("-")[1]);
+  public static long getEpochTsFromOffsetToken(String offsetToken) {
+    String[] arr = offsetToken.split("-");
+    if (arr.length != 2) {
+      LOGGER.error("Invalid offset token: {}", offsetToken);
+      throw new RuntimeException("Invalid offset token: " + offsetToken);
+    }
+    return Long.parseLong(arr[1].replace("\"", ""));
   }
 
   /**
    * Waits for a channel to drain
    *
    * @param ingestEngineEpochTs the epoch TS of this particular instance
-   * @param latestPersistedOffsetToken the latest persisted offset token for a channel
+   * @param channel the channel to fetch the latest persisted offset token from
    * @param lastSentOffsetToken the offset token that was last sent to Snowflake
    * @return the result of waiting to drain
    */
@@ -72,7 +82,7 @@ public class Utils {
         continue;
       }
 
-      int latestPersistedEpochTs = getEpochTsFromOffsetToken(latestPersistedOffsetToken);
+      long latestPersistedEpochTs = getEpochTsFromOffsetToken(latestPersistedOffsetToken);
       if (latestPersistedEpochTs > ingestEngineEpochTs) {
         // Indicates someone else opened the channel
         LOGGER.info(
@@ -82,8 +92,8 @@ public class Utils {
         return DrainReason.INVALID_EPOCH;
       }
 
-      int persistedBufferIndex = Utils.getBufferIndexFromOffsetToken(latestPersistedOffsetToken);
-      int latestSentBufferIndex = Utils.getBufferIndexFromOffsetToken(lastSentOffsetToken);
+      long persistedBufferIndex = Utils.getBufferIndexFromOffsetToken(latestPersistedOffsetToken);
+      long latestSentBufferIndex = Utils.getBufferIndexFromOffsetToken(lastSentOffsetToken);
       if (latestSentBufferIndex < persistedBufferIndex) {
         LOGGER.info(
             "Ingest is lagging, going to wait for commit. latestPersistedBufferIndex={} lastSentBufferIndex={}",

@@ -20,6 +20,7 @@ public class Drainer {
   enum TerminationReason {
     SUCCESS,
     CHANNEL_ERROR,
+    UNEXPECTED_ERROR
   }
 
   // The buffer that we should be draining from
@@ -83,6 +84,47 @@ public class Drainer {
     return false;
   }
 
+  private void waitForMoreData() {
+    try {
+      Thread.sleep(10);
+    } catch (InterruptedException e) {
+    }
+  }
+
+  private void logDrainExitCriteriaReached(Buffer buffer, long recordsDrained) {
+    LOGGER.info(
+        "Drain exit criteria reached. db={} schema={} table={} recordsDrained={}",
+        buffer.getDatabase(),
+        buffer.getSchema(),
+        buffer.getTable(),
+        recordsDrained);
+  }
+
+  private void logOutstandingDataError(Buffer buffer, SFException e) {
+    LOGGER.error(
+        "The channel has either been closed or reopened but we still have data in our buffer. db={} schema={} table={} vendorCode={} msg={}",
+        buffer.getDatabase(),
+        buffer.getSchema(),
+        buffer.getTable(),
+        e.getVendorCode(),
+        e.getMessage());
+  }
+
+  // TODO: this is admittedly pretty weak error handling but the basic idea is that we'll
+  // continue to ingest rows per above and simply log that we received errors for now.
+  private void logResponseErrors(InsertValidationResponse response) {
+    for (InsertValidationResponse.InsertError err : response.getInsertErrors()) {
+      LOGGER.error(
+          "Unable to insert row. db={} schema={} table={} rowIndex={} msg={} err={}",
+          buffer.getDatabase(),
+          buffer.getSchema(),
+          buffer.getTable(),
+          err.getRowIndex(),
+          err.getException() != null ? err.getException().getMessage() : "",
+          err);
+    }
+  }
+
   /** Santa Cruz hardcore represent! */
   public TerminationReason drain() {
     LOGGER.info(
@@ -90,81 +132,61 @@ public class Drainer {
         buffer.getDatabase(),
         buffer.getSchema(),
         buffer.getTable());
-    long drainStartTimeMs = System.currentTimeMillis();
-    long recordsDrained = 0;
-    SnowflakeStreamingIngestChannel channel =
-        ChannelManager.getInstance()
-            .getChannelForTable(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
-    String lastSentOffsetToken = null;
 
-    while (true) {
-      if (abortDueToLimits(drainStartTimeMs, recordsDrained)) {
-        LOGGER.info(
-            "Drain exit criteria reached. db={} schema={} table={} recordsDrained={}",
-            buffer.getDatabase(),
-            buffer.getSchema(),
-            buffer.getTable(),
-            recordsDrained);
-        Utils.DrainReason reason =
-            Utils.waitForChannelToDrain(
-                maxSecondsToWaitToDrain, channel, ingestEngineEpochTs, lastSentOffsetToken);
-        LOGGER.info("Exiting drain loop drainReason={}", reason.name());
-        return TerminationReason.SUCCESS;
-      }
+    try {
+      long drainStartTimeMs = System.currentTimeMillis();
+      long recordsDrained = 0;
+      SnowflakeStreamingIngestChannel channel =
+          ChannelManager.getInstance()
+              .getChannelForTable(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+      String lastSentOffsetToken = null;
 
-      Optional<Pair<Long, Map<String, Object>>> row = buffer.getAndAdvanceLatestUncommittedRow();
-      if (row.isEmpty()) {
-        // If we didn't get anything but still hold the thread then wait to see if we get any
-        // incoming data
+      while (true) {
+        if (abortDueToLimits(drainStartTimeMs, recordsDrained)) {
+          logDrainExitCriteriaReached(buffer, recordsDrained);
+          Utils.DrainReason reason =
+              Utils.waitForChannelToDrain(
+                  maxSecondsToWaitToDrain, channel, ingestEngineEpochTs, lastSentOffsetToken);
+          LOGGER.info("Exiting drain loop drainReason={}", reason.name());
+          return TerminationReason.SUCCESS;
+        }
+
+        Optional<Pair<Long, Map<String, Object>>> row = buffer.getAndAdvanceLatestUncommittedRow();
+        if (row.isEmpty()) {
+          waitForMoreData();
+          continue;
+        }
+        recordsDrained++;
+
+        // Send that row to the channel using the offset token in the queue along with the data
+        String offsetToken = Utils.getOffsetToken(row.get().getFirst(), ingestEngineEpochTs);
+        Map<String, Object> rowData = row.get().getSecond();
+
+        InsertValidationResponse response;
         try {
-          Thread.sleep(10);
-        } catch (InterruptedException e) {
+          response = channel.insertRow(rowData, offsetToken);
+        } catch (SFException e) {
+          // This indicates that the channel has been closed or is now invalid. So we have to reopen
+          // it and go from there. We do this by essentially removing it from the map and re-opening
+          // on the next go around. This banks heavily on a single thread invoking this method
+          // on a per-table basis as managed in `DrainManager`, otherwise there may be concurrency
+          // issues wherein someone attempts to use a channel that is being removed.
+          logOutstandingDataError(buffer, e);
+          ChannelManager.getInstance()
+              .invalidateChannel(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+          return TerminationReason.CHANNEL_ERROR;
         }
-        continue;
-      }
-      recordsDrained++;
 
-      // Send that row to the channel using the offset token in the queue along with the data
-      String offsetToken = Utils.getOffsetToken(row.get().getFirst(), ingestEngineEpochTs);
-      Map<String, Object> rowData = row.get().getSecond();
+        lastSentOffsetToken = offsetToken;
 
-      InsertValidationResponse response;
-      try {
-        response = channel.insertRow(rowData, offsetToken);
-      } catch (SFException e) {
-        // This indicates that the channel has been closed or is now invalid. So we have to reopen
-        // it and go from there. We do this by essentially removing it from the map and re-opening
-        // on the next go around. This banks heavily on a single thread invoking this method
-        // on a per-table basis as managed in `DrainManager`, otherwise there may be concurrency
-        // issues wherein someone attempts to use a channel that is being removed.
-        LOGGER.error(
-            "The channel has either been closed or reopened but we still have data in our buffer. db={} schema={} table={} vendorCode={} msg={}",
-            buffer.getDatabase(),
-            buffer.getSchema(),
-            buffer.getTable(),
-            e.getVendorCode(),
-            e.getMessage());
-        ChannelManager.getInstance()
-            .invalidateChannel(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
-        return TerminationReason.CHANNEL_ERROR;
-      }
-
-      lastSentOffsetToken = offsetToken;
-
-      if (response.hasErrors()) {
-        // TODO: this is admittedly pretty weak error handling but the basic idea is that we'll
-        // continue to ingest rows per above and simply log that we received errors for now.
-        for (InsertValidationResponse.InsertError err : response.getInsertErrors()) {
-          LOGGER.error(
-              "Unable to insert row. db={} schema={} table={} rowIndex={} msg={} err={}",
-              buffer.getDatabase(),
-              buffer.getSchema(),
-              buffer.getTable(),
-              err.getRowIndex(),
-              err.getException() != null ? err.getException().getMessage() : "",
-              err);
+        if (response.hasErrors()) {
+          logResponseErrors(response);
         }
       }
+
+    } catch (Exception e) {
+      LOGGER.error("Unexpected error", e);
     }
+    return TerminationReason.UNEXPECTED_ERROR;
   }
 }
