@@ -1,5 +1,6 @@
 package com.example.SnowpipeRest.snowflake;
 
+import com.example.SnowpipeRest.utils.TableKey;
 import com.example.SnowpipeRest.utils.Utils;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestClient;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestClientFactory;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Snowpipe Streaming Client Manager. May return unique Clients or may share a Client. For now this
@@ -22,17 +24,21 @@ public class ClientManager {
 
   private ClientConfig config;
 
+  private ConcurrentHashMap<TableKey, SnowflakeStreamingIngestClient> clients;
+
   /** Initializes a Client manager backed by a single Snowpipe Streaming Client instance */
   public ClientManager() {}
 
   public void init(ClientConfig config) {
     this.config = config;
-    this.client = buildSingletonClientInstance();
+    // this.client = buildSingletonClientInstance();
+    this.clients = new ConcurrentHashMap<>();
   }
 
   /** Returns the Client instance (currently a singleton) */
-  public SnowflakeStreamingIngestClient getClient() {
-    return client;
+  public SnowflakeStreamingIngestClient getClient(TableKey tableKey) {
+    return clients.computeIfAbsent(tableKey, tk -> buildSingletonClientInstance());
+    // return client;
   }
 
   private SnowflakeStreamingIngestClient buildSingletonClientInstance() {

@@ -25,7 +25,7 @@ public class ChannelManager {
       // Lazy load this to get around local testing and Spring Boot reflection insanity
       ClientManager clientManager = new ClientManager();
       clientManager.init(new ClientConfig());
-      INSTANCE = new ChannelManager(clientManager.getClient());
+      INSTANCE = new ChannelManager(clientManager);
     }
     return INSTANCE;
   }
@@ -37,10 +37,13 @@ public class ChannelManager {
 
   private final ConcurrentHashMap<TableKey, SnowflakeStreamingIngestChannel> cachedChannels;
 
-  private final SnowflakeStreamingIngestClient client;
+  // private final SnowflakeStreamingIngestClient client;
 
-  public ChannelManager(final SnowflakeStreamingIngestClient client) {
-    this.client = client;
+  private final ClientManager clientManager;
+
+  public ChannelManager(ClientManager clientManager) {
+    // this.client = client;
+    this.clientManager = clientManager;
     this.cachedChannels = new ConcurrentHashMap<>();
   }
 
@@ -55,7 +58,8 @@ public class ChannelManager {
             .setOnErrorOption(OpenChannelRequest.OnErrorOption.CONTINUE)
             .build();
     final TableKey tableKey = new TableKey(database, schema, table);
-    return cachedChannels.computeIfAbsent(tableKey, t -> client.openChannel(request));
+    return cachedChannels.computeIfAbsent(
+        tableKey, t -> clientManager.getClient(tableKey).openChannel(request));
   }
 
   /** Invalidates a channel by removing it from the map */
@@ -83,7 +87,9 @@ public class ChannelManager {
               .setSchemaName(channel.getSchemaName())
               .setTableName(channel.getTableName())
               .build();
-      client.dropChannel(request);
+      final TableKey tableKey =
+          new TableKey(channel.getDBName(), channel.getSchemaName(), channel.getTableName());
+      clientManager.getClient(tableKey).dropChannel(request);
       LOGGER.info(
           "Channel dropped: db={} schema={} table={} channel={}",
           channel.getDBName(),
