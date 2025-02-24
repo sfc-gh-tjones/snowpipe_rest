@@ -69,6 +69,7 @@ public class Utils {
       SnowflakeStreamingIngestChannel channel,
       long ingestEngineEpochTs,
       String lastSentOffsetToken) {
+    String latestPersistedOffsetTokenCached = null;
     for (int i = 0; i < maxSecondsToWaitToDrain; i++) {
       try {
         Thread.sleep(1000);
@@ -91,6 +92,7 @@ public class Utils {
             ingestEngineEpochTs);
         return DrainReason.INVALID_EPOCH;
       }
+      latestPersistedOffsetTokenCached = latestPersistedOffsetToken;
 
       long persistedBufferIndex = Utils.getBufferIndexFromOffsetToken(latestPersistedOffsetToken);
       long latestSentBufferIndex = Utils.getBufferIndexFromOffsetToken(lastSentOffsetToken);
@@ -108,7 +110,11 @@ public class Utils {
       }
     }
 
-    LOGGER.error("Server side ingest never completed!");
+    LOGGER.error(
+        "Server side ingest id not complete in time. maxSecondsToWait={} latestPersistedOffsetToken={} lastSentOffsetToken={}",
+        maxSecondsToWaitToDrain,
+        latestPersistedOffsetTokenCached,
+        lastSentOffsetToken);
     return DrainReason.OFFSET_NEVER_MATCHED;
   }
 }

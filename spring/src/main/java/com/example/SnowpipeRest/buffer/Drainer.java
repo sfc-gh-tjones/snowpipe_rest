@@ -202,7 +202,9 @@ public class Drainer {
       }
 
     } catch (Exception e) {
-      LOGGER.error("Unexpected error", e);
+      LOGGER.error("Unexpected error. Invalidating channel as a get out of jail free card", e);
+      ChannelManager.getInstance()
+          .invalidateChannel(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
     }
     return TerminationReason.UNEXPECTED_ERROR;
   }

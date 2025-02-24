@@ -1,6 +1,7 @@
 package com.example.SnowpipeRest.buffer;
 
 import com.example.SnowpipeRest.snowflake.ChannelManager;
+import com.example.SnowpipeRest.snowflake.ClientManager;
 import com.example.SnowpipeRest.utils.TableKey;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestChannel;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestClient;
@@ -19,7 +20,7 @@ public class TestChannelManager extends ChannelManager {
       SnowflakeStreamingIngestClient client,
       boolean throwSFExceptionOnInsert,
       boolean returnResponseWithErrors) {
-    super(client);
+    super(new ClientManager());
     this.channels = new HashMap<>();
     this.throwSFExceptionOnInsert = throwSFExceptionOnInsert;
     this.returnResponseWithErrors = returnResponseWithErrors;

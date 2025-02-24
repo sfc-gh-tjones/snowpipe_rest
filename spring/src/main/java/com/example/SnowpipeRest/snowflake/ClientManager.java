@@ -19,9 +19,6 @@ public class ClientManager {
 
   static final Logger LOGGER = LoggerFactory.getLogger(ClientManager.class);
 
-  // Shared Client instance across all tables. We have relatively few tables hence one Client.
-  private SnowflakeStreamingIngestClient client;
-
   private ClientConfig config;
 
   private ConcurrentHashMap<TableKey, SnowflakeStreamingIngestClient> clients;
@@ -37,8 +34,9 @@ public class ClientManager {
 
   /** Returns the Client instance (currently a singleton) */
   public SnowflakeStreamingIngestClient getClient(TableKey tableKey) {
-    return clients.computeIfAbsent(tableKey, tk -> buildSingletonClientInstance());
-    // return client;
+    SnowflakeStreamingIngestClient clientRet =
+        clients.computeIfAbsent(tableKey, tk -> buildSingletonClientInstance());
+    return clientRet;
   }
 
   private SnowflakeStreamingIngestClient buildSingletonClientInstance() {
