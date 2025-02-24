@@ -39,7 +39,17 @@ public class ClientManager {
     return clientRet;
   }
 
-  private SnowflakeStreamingIngestClient buildSingletonClientInstance() {
+  /** Verifies the connection by creating a single Client instance not bound to a table */
+  public boolean credentialsValid() {
+    try {
+      buildSingletonClientInstance();
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  SnowflakeStreamingIngestClient buildSingletonClientInstance() {
     if (config == null) {
       LOGGER.error("No configuration provided");
       throw new RuntimeException("Null configuration provided");

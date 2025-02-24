@@ -47,6 +47,11 @@ public class ChannelManager {
     this.cachedChannels = new ConcurrentHashMap<>();
   }
 
+  /** Returns whether the provided Client config credentials are valid */
+  public boolean credentialsValid() {
+    return clientManager.credentialsValid();
+  }
+
   /** Gets or computes a channel instance. */
   public SnowflakeStreamingIngestChannel getChannelForTable(
       String database, String schema, String table) {
