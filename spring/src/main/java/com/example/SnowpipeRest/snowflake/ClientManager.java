@@ -1,5 +1,6 @@
 package com.example.SnowpipeRest.snowflake;
 
+import com.example.SnowpipeRest.utils.TableKey;
 import com.example.SnowpipeRest.utils.Utils;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestClient;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestClientFactory;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Snowpipe Streaming Client Manager. May return unique Clients or may share a Client. For now this
@@ -17,25 +19,37 @@ public class ClientManager {
 
   static final Logger LOGGER = LoggerFactory.getLogger(ClientManager.class);
 
-  // Shared Client instance across all tables. We have relatively few tables hence one Client.
-  private SnowflakeStreamingIngestClient client;
-
   private ClientConfig config;
+
+  private ConcurrentHashMap<TableKey, SnowflakeStreamingIngestClient> clients;
 
   /** Initializes a Client manager backed by a single Snowpipe Streaming Client instance */
   public ClientManager() {}
 
   public void init(ClientConfig config) {
     this.config = config;
-    this.client = buildSingletonClientInstance();
+    // this.client = buildSingletonClientInstance();
+    this.clients = new ConcurrentHashMap<>();
   }
 
   /** Returns the Client instance (currently a singleton) */
-  public SnowflakeStreamingIngestClient getClient() {
-    return client;
+  public SnowflakeStreamingIngestClient getClient(TableKey tableKey) {
+    SnowflakeStreamingIngestClient clientRet =
+        clients.computeIfAbsent(tableKey, tk -> buildSingletonClientInstance());
+    return clientRet;
   }
 
-  private SnowflakeStreamingIngestClient buildSingletonClientInstance() {
+  /** Verifies the connection by creating a single Client instance not bound to a table */
+  public boolean credentialsValid() {
+    try {
+      buildSingletonClientInstance();
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  SnowflakeStreamingIngestClient buildSingletonClientInstance() {
     if (config == null) {
       LOGGER.error("No configuration provided");
       throw new RuntimeException("Null configuration provided");
