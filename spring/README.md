@@ -56,19 +56,23 @@ There are some additional parameters that can be set to fine-tune
 the Snowpipe Streaming SDK:
 
 * `rest_api.buffer_manager_max_buffer_row_count` - the maximum row count that should be buffered in memory for a
-  given table
-* `rest_api.max_client_lag` - the Client lag that should be passed through to the Snowpipe Streaming Client SDK
+  given table. Increasing this may cause memory related exceptions if set to high. Set at a conservative amount
+  initially and increase based on throughput and how quickly you drain from a buffer via the `max_client_lag` parameter.
+* `rest_api.max_client_lag` - the max Client lag that should be passed through to the Snowpipe Streaming Client SDK.
+  Increasing this may result in more optimally sized BDEC files and thus better query performance for low-medium
+  throughput rates but will result in more memory being used in the SDK. Conversely, decreasing this may result
+  in less optimally sized BDECs but result in a lower memory footpring in the app.
 * `rest_api.drain_manager_num_threads` - the number of threads that should be used to drain data from in-memory
-  buffers
+  buffers. This essentially controls the number of ingest tasks. `15` is a sane starting value.
 * `rest_api.drain_manager_max_duration_to_drain_ms` - the maximum a given thread should drain before returning the
-  thread to the thread pool
+  thread to the thread pool. If `rest_api.drain_manager_max_records_to_drain` is reached first however then the thread
+  may exit before this duration is reached.
 * `rest_api.drain_manager_max_records_to_drain` - the maximum number of records a given thread should drain before
-  returning the thread to the thread pool
-* `rest_api.drain_manager_max_seconds_to_wait_to_drain` - the maximum number of records to wait when checking the
-  persisted offset token in Snowflake for a channel
-
-Note that `rest_api.drain_manager_max_duration_to_drain_ms` and `rest_api.drain_manager_max_records_to_drain`
-will trigger the thread to exit based on whatever comes first.
+  returning the thread to the thread pool. Same relationship to the above parameter - if we do not hit this amount
+  before the maximum duration is reached then the drain task will exit early.
+* `rest_api.drain_manager_max_seconds_to_wait_to_drain` - the maximum number of seconds to wait when checking the
+  persisted offset token in Snowflake for a channel. This doesn't impact functionality but will cause a drain task
+  thread to wait for longer before exiting. `120+` is a sane starting value.
 
 You can set these by environment variable, as well:
 
@@ -76,13 +80,12 @@ You can set these by environment variable, as well:
 * `SNOWFLAKE_USER` for `snowflake.user`
 * `SNOWFLAKE_ROLE` for `snowflake.role`
 * `SNOWFLAKE_PRIVATE_KEY` for `snowflake.private_key`
-* `REST_API_DRAIN_MANAGER_MAX_DURATION_TO_DRAIN_MS` for `rest_api.buffer_manager_max_buffer_row_count`
+* `REST_API_BUFFER_MANAGER_MAX_BUFFER_ROW_COUNT` for `rest_api.buffer_manager_max_buffer_row_count`
 * `REST_API_MAX_CLIENT_LAG` for `rest_api.max_client_lag`
 * `REST_API_DRAIN_MANAGER_NUM_THREADS` for `rest_api.drain_manager_num_threads`
 * `REST_API_DRAIN_MANAGER_MAX_DURATION_TO_DRAIN_MS` for `rest_api.drain_manager_max_duration_to_drain_ms`
 * `REST_API_DRAIN_MANAGER_MAX_RECORDS_TO_DRAIN` for `rest_api.drain_manager_max_records_to_drain`
-* `REST_API_DRAIN_MANAGER_MAX_SECONDS_TO_WAIT_TO_DRAIN`
-  for `rest_api.drain_manager_max_records_to_wait_to_drain`
+* `REST_API_DRAIN_MANAGER_MAX_SECONDS_TO_WAIT_TO_DRAIN` for `rest_api.drain_manager_max_seconds_to_wait_to_drain`
 
 From the commandline run:
 
