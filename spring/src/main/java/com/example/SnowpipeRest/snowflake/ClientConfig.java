@@ -25,6 +25,9 @@ public class ClientConfig {
   @Value("${rest_api.max_client_lag}")
   private String maxClientLag;
 
+  @Value("${rest_api.default_compression_algorithm}")
+  private String defaultCompressionAlgorithm;
+
   public String getSnowflakeUrl() {
     if (snowflakeUrl == null) {
       LOGGER.info("Defaulting to SNOWFLAKE_URL environment variable");
@@ -63,5 +66,18 @@ public class ClientConfig {
       return System.getenv("REST_API_MAX_CLIENT_LAG");
     }
     return maxClientLag;
+  }
+
+  public String getCompressionAlgorithm() {
+    if (defaultCompressionAlgorithm == null) {
+      LOGGER.info("Defaulting to REST_API_DEFAULT_COMPRESSION_ALGORITHM environment variable");
+      String ret = System.getenv("REST_API_DEFAULT_COMPRESSION_ALGORITHM");
+      if (ret == null || ret.isEmpty()) {
+        LOGGER.info("Default to ZSTD");
+        return "ZSTD";
+      }
+      return ret;
+    }
+    return defaultCompressionAlgorithm;
   }
 }

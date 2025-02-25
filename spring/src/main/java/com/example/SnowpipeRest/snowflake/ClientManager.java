@@ -69,6 +69,8 @@ public class ClientManager {
     if (config.getMaxClientLag() != null) {
       props.put(ParameterProvider.MAX_CLIENT_LAG, config.getMaxClientLag());
     }
+    props.put(
+        ParameterProvider.BDEC_PARQUET_COMPRESSION_ALGORITHM, config.getCompressionAlgorithm());
     try {
       return SnowflakeStreamingIngestClientFactory.builder("REST_" + Utils.getHostName())
           .setProperties(props)
