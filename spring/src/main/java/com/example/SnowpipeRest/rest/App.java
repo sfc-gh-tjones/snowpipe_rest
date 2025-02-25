@@ -1,6 +1,7 @@
 package com.example.SnowpipeRest.rest;
 
 import com.example.SnowpipeRest.snowflake.ChannelManager;
+import com.example.SnowpipeRest.utils.MetricsReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -20,6 +21,7 @@ public class App {
     if (!ChannelManager.getInstance().credentialsValid()) {
       throw new RuntimeException("Unable to start server - credentials to Snowflake are not valid");
     }
+    MetricsReporter.startReporter();
     app.setDefaultProperties(Collections.singletonMap("server.port", 8080));
     app.run(args);
   }
