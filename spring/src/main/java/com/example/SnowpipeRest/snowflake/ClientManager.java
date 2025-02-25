@@ -23,19 +23,27 @@ public class ClientManager {
 
   private ConcurrentHashMap<TableKey, SnowflakeStreamingIngestClient> clients;
 
+  private boolean useMultipleClients;
+  private SnowflakeStreamingIngestClient singletonClientInstance;
+
   /** Initializes a Client manager backed by a single Snowpipe Streaming Client instance */
   public ClientManager() {}
 
   public void init(ClientConfig config) {
     this.config = config;
-    // this.client = buildSingletonClientInstance();
+    this.useMultipleClients = config.shouldUseMultipleClients();
+    if (!useMultipleClients) {
+      singletonClientInstance = buildSingletonClientInstance();
+    }
     this.clients = new ConcurrentHashMap<>();
   }
 
   /** Returns the Client instance (currently a singleton) */
   public SnowflakeStreamingIngestClient getClient(TableKey tableKey) {
     SnowflakeStreamingIngestClient clientRet =
-        clients.computeIfAbsent(tableKey, tk -> buildSingletonClientInstance());
+        useMultipleClients
+            ? clients.computeIfAbsent(tableKey, tk -> buildSingletonClientInstance())
+            : singletonClientInstance;
     return clientRet;
   }
 

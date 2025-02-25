@@ -68,6 +68,15 @@ public class ClientConfig {
     return maxClientLag;
   }
 
+  public boolean shouldUseMultipleClients() {
+    String isSet = System.getenv("REST_API_USE_MULTIPLE_CLIENTS");
+    if (isSet == null || isSet.isEmpty()) {
+      LOGGER.info("Defaulting to using multiple clients");
+      return true;
+    }
+    return Boolean.parseBoolean(isSet);
+  }
+
   public String getCompressionAlgorithm() {
     if (defaultCompressionAlgorithm == null) {
       LOGGER.info("Defaulting to REST_API_DEFAULT_COMPRESSION_ALGORITHM environment variable");

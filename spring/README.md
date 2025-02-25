@@ -74,7 +74,7 @@ the Snowpipe Streaming SDK:
   persisted offset token in Snowflake for a channel. This doesn't impact functionality but will cause a drain task
   thread to wait for longer before exiting. `120+` is a sane starting value.
 * `rest_api.default_compression_algorithm`- The default compression algorithm to use when generating BDECs. Default
-  is `ZSTD`
+  is `ZSTD`.
 
 You can set these by environment variable, as well:
 
@@ -89,6 +89,7 @@ You can set these by environment variable, as well:
 * `REST_API_DRAIN_MANAGER_MAX_RECORDS_TO_DRAIN` for `rest_api.drain_manager_max_records_to_drain`
 * `REST_API_DRAIN_MANAGER_MAX_SECONDS_TO_WAIT_TO_DRAIN` for `rest_api.drain_manager_max_seconds_to_wait_to_drain`
 * `REST_API_DEFAULT_COMPRESSION_ALGORITHM` for `rest_api.default_compression_algorithm`
+* `REST_API_USE_MULTIPLE_CLIENTS` for `rest_api.use_multiple_clients`
 
 From the commandline run:
 
