@@ -1,7 +1,7 @@
 package com.example.SnowpipeRest.buffer;
 
 import com.example.SnowpipeRest.snowflake.ChannelManager;
-import com.example.SnowpipeRest.utils.TableKey;
+import com.example.SnowpipeRest.utils.TablePartitionKey;
 import com.example.SnowpipeRest.utils.Utils;
 import net.snowflake.ingest.utils.Pair;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);
@@ -28,7 +28,8 @@ public class DrainerTest {
 
     assertEquals(1, channelManager.channels.keySet().size());
     TestChannel channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 1));
     assertNotNull(channel);
     assertEquals(2, channel.insertedRows.size());
 
@@ -45,7 +46,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);
@@ -56,7 +57,8 @@ public class DrainerTest {
 
     assertEquals(1, channelManager.channels.keySet().size());
     TestChannel channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 1));
     assertNotNull(channel);
     assertEquals(1, channel.insertedRows.size());
 
@@ -68,7 +70,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, true, false);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);
@@ -79,7 +81,8 @@ public class DrainerTest {
 
     assertEquals(1, channelManager.channels.keySet().size());
     TestChannel channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 1));
     assertNotNull(channel);
     assertEquals(0, channel.insertedRows.size());
 
@@ -91,7 +94,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, true, false);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);
@@ -102,7 +105,8 @@ public class DrainerTest {
 
     assertEquals(1, channelManager.channels.keySet().size());
     TestChannel channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 1));
     assertNotNull(channel);
     assertEquals(0, channel.insertedRows.size());
     assertTrue(buffer.hasOutstandingRows());
@@ -121,7 +125,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, true);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);
@@ -132,7 +136,8 @@ public class DrainerTest {
 
     assertEquals(1, channelManager.channels.keySet().size());
     TestChannel channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 1));
     assertNotNull(channel);
     assertEquals(2, channel.insertedRows.size());
     assertFalse(buffer.hasOutstandingRows());

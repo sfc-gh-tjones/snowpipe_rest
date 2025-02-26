@@ -1,7 +1,7 @@
 package com.example.SnowpipeRest.buffer;
 
 import com.example.SnowpipeRest.snowflake.ChannelManager;
-import com.example.SnowpipeRest.utils.TableKey;
+import com.example.SnowpipeRest.utils.TablePartitionKey;
 import com.example.SnowpipeRest.utils.Utils;
 import net.snowflake.ingest.utils.Pair;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ public class DrainManagerTest {
 
   @Test
   public void testDrainManagerLifecycle() {
-    BufferManager bufferManager = new BufferManager(100);
+    BufferManager bufferManager = new BufferManager(100, 1);
     DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 0, 0, 120);
     assertEquals(0, drainManager.getTableWorkSet().size());
     assertEquals(0, drainManager.getTableWorkQueue().size());
@@ -35,7 +35,7 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(100);
+    BufferManager bufferManager = new BufferManager(100, 1);
     DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120);
 
     final String databaseName = "my_db";
@@ -52,7 +52,8 @@ public class DrainManagerTest {
 
     assertEquals(1, channelManager.channels.keySet().size());
     TestChannel channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 0));
     assertNotNull(channel);
     assertEquals(2, channel.insertedRows.size());
     verifyRowsForChannel(channel, 2);
@@ -63,7 +64,7 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(100);
+    BufferManager bufferManager = new BufferManager(100, 1);
     DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120);
 
     final String databaseName = "my_db";
@@ -81,7 +82,8 @@ public class DrainManagerTest {
 
     assertEquals(1, channelManager.channels.keySet().size());
     TestChannel channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 0));
     assertNotNull(channel);
     assertEquals(4, channel.insertedRows.size());
     verifyRowsForChannel(channel, 4);
@@ -92,7 +94,7 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(100);
+    BufferManager bufferManager = new BufferManager(100, 1);
     DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120);
 
     final String databaseName = "my_db";
@@ -109,7 +111,8 @@ public class DrainManagerTest {
 
     assertEquals(1, channelManager.channels.keySet().size());
     TestChannel channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 0));
     assertNotNull(channel);
     assertEquals(2, channel.insertedRows.size());
     verifyRowsForChannel(channel, 2);
@@ -124,7 +127,8 @@ public class DrainManagerTest {
 
     assertEquals(1, channelManager.channels.keySet().size());
     channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 0));
     assertNotNull(channel);
     assertEquals(4, channel.insertedRows.size());
     verifyRowsForChannel(channel, 4);
@@ -136,7 +140,7 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(100);
+    BufferManager bufferManager = new BufferManager(100, 1);
     DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120);
 
     final String databaseName = "my_db";
@@ -161,14 +165,16 @@ public class DrainManagerTest {
     assertEquals(2, channelManager.channels.keySet().size());
 
     TestChannel channel =
-        (TestChannel) channelManager.channels.get(new TableKey("my_db", "my_sch", "my_table"));
+        (TestChannel)
+            channelManager.channels.get(new TablePartitionKey("my_db", "my_sch", "my_table", 0));
     assertNotNull(channel);
     assertEquals(2, channel.insertedRows.size());
     verifyRowsForChannel(channel, 2);
 
     TestChannel channel2 =
         (TestChannel)
-            channelManager.channels.get(new TableKey("my_db_2", "my_sch_2", "my_table_2"));
+            channelManager.channels.get(
+                new TablePartitionKey("my_db_2", "my_sch_2", "my_table_2", 0));
     assertNotNull(channel2);
     assertEquals(2, channel2.insertedRows.size());
     verifyRowsForChannel(channel2, 2);
@@ -179,7 +185,7 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(2000);
+    BufferManager bufferManager = new BufferManager(2000, 1);
     DrainManager drainManager = new DrainManager(1234, bufferManager, 10, 1000, 1000, 120);
     final String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
@@ -207,7 +213,8 @@ public class DrainManagerTest {
       String tableName = "my_schema_" + i;
       TestChannel channel =
           (TestChannel)
-              channelManager.channels.get(new TableKey(databaseName, schemaName, tableName));
+              channelManager.channels.get(
+                  new TablePartitionKey(databaseName, schemaName, tableName, 0));
       assertNotNull(channel);
       assertEquals(2000, channel.insertedRows.size());
       verifyRowsForChannel(channel, 2000);

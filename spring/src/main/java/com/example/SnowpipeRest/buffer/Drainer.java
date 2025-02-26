@@ -147,14 +147,26 @@ public class Drainer {
       long recordsDrained = 0;
       SnowflakeStreamingIngestChannel channel =
           ChannelManager.getInstance()
-              .getChannelForTable(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+              .getChannelForTable(
+                  buffer.getDatabase(),
+                  buffer.getSchema(),
+                  buffer.getTable(),
+                  buffer.getPartitionIndex());
       if (!channel.isValid()) {
         logInvalidChannel(buffer, channel);
         ChannelManager.getInstance()
-            .invalidateChannel(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+            .invalidateChannel(
+                buffer.getDatabase(),
+                buffer.getSchema(),
+                buffer.getTable(),
+                buffer.getPartitionIndex());
         channel =
             ChannelManager.getInstance()
-                .getChannelForTable(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+                .getChannelForTable(
+                    buffer.getDatabase(),
+                    buffer.getSchema(),
+                    buffer.getTable(),
+                    buffer.getPartitionIndex());
       }
       String lastSentOffsetToken = null;
 
@@ -190,7 +202,11 @@ public class Drainer {
           // issues wherein someone attempts to use a channel that is being removed.
           logOutstandingDataError(buffer, e);
           ChannelManager.getInstance()
-              .invalidateChannel(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+              .invalidateChannel(
+                  buffer.getDatabase(),
+                  buffer.getSchema(),
+                  buffer.getTable(),
+                  buffer.getPartitionIndex());
           return TerminationReason.CHANNEL_ERROR;
         }
 
@@ -204,7 +220,11 @@ public class Drainer {
     } catch (Exception e) {
       LOGGER.error("Unexpected error. Invalidating channel as a get out of jail free card", e);
       ChannelManager.getInstance()
-          .invalidateChannel(buffer.getDatabase(), buffer.getSchema(), buffer.getTable());
+          .invalidateChannel(
+              buffer.getDatabase(),
+              buffer.getSchema(),
+              buffer.getTable(),
+              buffer.getPartitionIndex());
     }
     return TerminationReason.UNEXPECTED_ERROR;
   }

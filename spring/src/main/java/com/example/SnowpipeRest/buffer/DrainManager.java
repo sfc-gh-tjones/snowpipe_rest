@@ -1,6 +1,6 @@
 package com.example.SnowpipeRest.buffer;
 
-import com.example.SnowpipeRest.utils.TableKey;
+import com.example.SnowpipeRest.utils.TablePartitionKey;
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +25,8 @@ public class DrainManager implements Runnable {
   ThreadPoolExecutor executor;
 
   // The current working set of tables that we are working on. These should be in sync
-  private final Set<TableKey> tableWorkingSet;
-  private final Queue<TableKey> tableWorkQueue;
+  private final Set<TablePartitionKey> tableWorkingSet;
+  private final Queue<TablePartitionKey> tableWorkQueue;
 
   private final long maxDurationToDrainMs;
   private final long maxRecordsToDrain;
@@ -68,17 +68,17 @@ public class DrainManager implements Runnable {
   }
 
   @VisibleForTesting
-  public Set<TableKey> getTableWorkSet() {
+  public Set<TablePartitionKey> getTableWorkSet() {
     return tableWorkingSet;
   }
 
   @VisibleForTesting
-  public Queue<TableKey> getTableWorkQueue() {
+  public Queue<TablePartitionKey> getTableWorkQueue() {
     return tableWorkQueue;
   }
 
   // This is hella hacky but coordinate add/remove from the work set via an action
-  private synchronized void modifyTableWorkSet(TableKey tableKey, Action action) {
+  private synchronized void modifyTableWorkSet(TablePartitionKey tableKey, Action action) {
     if (action == Action.ADD_TO_QUEUE) {
       if (!tableWorkingSet.contains(tableKey)) {
         LOGGER.info(
@@ -97,16 +97,20 @@ public class DrainManager implements Runnable {
   }
 
   /** Enqueues a work item if one is not present */
-  public void enqueueWorkItemIfNeeded(final TableKey tableKey) {
+  public void enqueueWorkItemIfNeeded(final TablePartitionKey tableKey) {
     if (!tableWorkingSet.contains(tableKey)) {
       // Quick and dirty check before entering the synchronized method
       modifyTableWorkSet(tableKey, Action.ADD_TO_QUEUE);
     }
   }
 
-  public void processWorKQueueItem(TableKey tableKey) {
+  public void processWorKQueueItem(TablePartitionKey tableKey) {
     final Buffer buffer =
-        bufferManager.getBuffer(tableKey.getDatabase(), tableKey.getSchema(), tableKey.getTable());
+        bufferManager.getBufferWithIndex(
+            tableKey.getDatabase(),
+            tableKey.getSchema(),
+            tableKey.getTable(),
+            tableKey.getPartitionIndex());
     if (buffer == null) {
       LOGGER.error("Attempting to drain a buffer that no longer exists");
       return;
@@ -153,8 +157,9 @@ public class DrainManager implements Runnable {
     LOGGER.info("DrainManager started");
     while (true) {
       LOGGER.trace("Starting iteration of the DrainManager");
-      for (Map.Entry<TableKey, Buffer> entry : this.bufferManager.getTableToBuffer().entrySet()) {
-        final TableKey tableKey = entry.getKey();
+      for (Map.Entry<TablePartitionKey, Buffer> entry :
+          this.bufferManager.getTableToBuffer().entrySet()) {
+        final TablePartitionKey tableKey = entry.getKey();
         final Buffer buffer = entry.getValue();
         if (buffer.hasOutstandingRows()) {
           enqueueWorkItemIfNeeded(tableKey);
@@ -162,12 +167,12 @@ public class DrainManager implements Runnable {
       }
 
       while (tableWorkQueue.iterator().hasNext()) {
-        TableKey tableKey = tableWorkQueue.poll();
-        if (tableKey == null) {
+        TablePartitionKey tablePartitionKey = tableWorkQueue.poll();
+        if (tablePartitionKey == null) {
           LOGGER.error("Received a null tableKey");
           continue;
         }
-        processWorKQueueItem(tableKey);
+        processWorKQueueItem(tablePartitionKey);
       }
 
       try {

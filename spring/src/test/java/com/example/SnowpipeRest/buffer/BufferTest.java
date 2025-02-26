@@ -13,13 +13,13 @@ public class BufferTest {
 
   @Test
   public void testNoOutstandingRows() {
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 1);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 1, 1);
     assertFalse(buffer.hasOutstandingRows());
   }
 
   @Test
   public void testHasOutstandingRowsAllAccepted() {
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
     assertFalse(buffer.hasOutstandingRows());
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
@@ -31,7 +31,7 @@ public class BufferTest {
 
   @Test
   public void testHasOutstandingRowsPartiallyRejected() {
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 1);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 1, 1);
     assertFalse(buffer.hasOutstandingRows());
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
@@ -43,7 +43,7 @@ public class BufferTest {
 
   @Test
   public void testGarbageDataIn() {
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 1);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 1, 1);
     String requestBody = "DRAINNNNNNNNN";
     EnqueueResponse resp = buffer.expandRowsEnqueueData(requestBody);
     assertEquals("Unable to parse request body", resp.getMessage());
@@ -53,7 +53,7 @@ public class BufferTest {
 
   @Test
   public void testGetAndAdvanceLatestUncommittedRow() {
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
     assertFalse(buffer.hasOutstandingRows());
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
