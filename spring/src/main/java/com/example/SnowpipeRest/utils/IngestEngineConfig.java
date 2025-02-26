@@ -14,6 +14,9 @@ public class IngestEngineConfig {
   @Value("${rest_api.buffer_manager_max_buffer_row_count}")
   private long maxBufferRowCount;
 
+  @Value("${rest_api.buffer_manager_max_shards_per_table}")
+  private long maxShardsPerTable;
+
   @Value("${rest_api.drain_manager_num_threads}")
   private long numThreads;
 
@@ -36,6 +39,14 @@ public class IngestEngineConfig {
 
   private long getEnv(String envName) {
     return Integer.parseInt(System.getenv(envName));
+  }
+
+  public long getMaxShardsPerTable() {
+    if (maxShardsPerTable <= 0) {
+      checkEnv("REST_API_BUFFER_MANAGER_MAX_SHARDS_PER_TABLE");
+      return getEnv("REST_API_BUFFER_MANAGER_MAX_SHARDS_PER_TABLE");
+    }
+    return maxShardsPerTable;
   }
 
   public long getMaxBufferRowCount() {

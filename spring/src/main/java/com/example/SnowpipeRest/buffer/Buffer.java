@@ -31,6 +31,9 @@ public class Buffer {
   // Our offset into the buffer if we need to replay events
   private long offsetCounter;
 
+  // Effectively the partition Id
+  private final long partitionIndex;
+
   // Our actual row buffer. Map of offset to data
   private final Queue<Pair<Long, Map<String, Object>>> rowBuffer;
 
@@ -39,10 +42,11 @@ public class Buffer {
    *
    * @param maxRowCount the max number of rows that we will accept in this buffer
    */
-  Buffer(String database, String schema, String table, long maxRowCount) {
+  Buffer(String database, String schema, String table, long maxRowCount, long partitionIndex) {
     this.database = database;
     this.schema = schema;
     this.table = table;
+    this.partitionIndex = partitionIndex;
 
     this.maxRowCount = maxRowCount;
     this.offsetCounter = 0;
@@ -139,7 +143,7 @@ public class Buffer {
 
   @Override
   public int hashCode() {
-    return Objects.hash(database, schema, table);
+    return Objects.hash(database, schema, table, partitionIndex);
   }
 
   @Override
@@ -148,6 +152,11 @@ public class Buffer {
     if (obj == null || getClass() != obj.getClass()) return false;
     return Objects.equals(database, ((Buffer) obj).database)
         && Objects.equals(schema, ((Buffer) obj).schema)
-        && Objects.equals(table, ((Buffer) obj).table);
+        && Objects.equals(table, ((Buffer) obj).table)
+        && Objects.equals(partitionIndex, ((Buffer) obj).partitionIndex);
+  }
+
+  public long getPartitionIndex() {
+    return partitionIndex;
   }
 }

@@ -2,7 +2,7 @@ package com.example.SnowpipeRest.buffer;
 
 import com.example.SnowpipeRest.snowflake.ChannelManager;
 import com.example.SnowpipeRest.snowflake.ClientManager;
-import com.example.SnowpipeRest.utils.TableKey;
+import com.example.SnowpipeRest.utils.TablePartitionKey;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestChannel;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestClient;
 
@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class TestChannelManager extends ChannelManager {
 
-  final Map<TableKey, SnowflakeStreamingIngestChannel> channels;
+  final Map<TablePartitionKey, SnowflakeStreamingIngestChannel> channels;
 
   final boolean throwSFExceptionOnInsert;
   final boolean returnResponseWithErrors;
@@ -35,9 +35,9 @@ public class TestChannelManager extends ChannelManager {
    */
   @Override
   public SnowflakeStreamingIngestChannel getChannelForTable(
-      String database, String schema, String table) {
+      String database, String schema, String table, long partitionIndex) {
     return channels.computeIfAbsent(
-        new TableKey(database, schema, table),
+        new TablePartitionKey(database, schema, table, partitionIndex),
         t -> new TestChannel(throwSFExceptionOnInsert, returnResponseWithErrors));
   }
 }
