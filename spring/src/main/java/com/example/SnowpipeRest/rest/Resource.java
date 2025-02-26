@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.http.HttpResponse;
+
 @RestController
 @RequestMapping("/snowpipe")
 public class Resource {
@@ -35,13 +37,17 @@ public class Resource {
 
   @PutMapping("/insert/{database}/{schema}/{table}")
   @ResponseBody
-  public EnqueueResponse insert(
+  public ResponseEntity<EnqueueResponse> insert(
       @PathVariable String database,
       @PathVariable String schema,
       @PathVariable String table,
       @RequestBody String body) {
     lazyLoadIngestEngine();
-    return ingestEngine.enqueueData(database, schema, table, body);
+    EnqueueResponse response = ingestEngine.enqueueData(database, schema, table, body);
+    if (response.getRowsRejected() > 0) {
+      return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+    return ResponseEntity.status(HttpStatus.OK).body(response);
   }
 
   @ExceptionHandler(TableNotFoundResponse.class)
