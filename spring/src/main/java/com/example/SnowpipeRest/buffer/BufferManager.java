@@ -4,12 +4,20 @@ import com.example.SnowpipeRest.utils.TableKey;
 import com.example.SnowpipeRest.utils.TablePartitionKey;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Manages buffers used to hold data for a destination table */
 @Component
 public class BufferManager {
+
+  static Set<String> highVolumeTables = new HashSet<>();
+
+  static {
+    highVolumeTables.add("EDR_DATA");
+  }
 
   //
   ConcurrentHashMap<TableKey, AtomicInteger> tableToPartitionIndex;
@@ -21,8 +29,12 @@ public class BufferManager {
 
   long maxShardsPerTable;
 
-  private long getPartitionIndex(AtomicInteger atomicInteger) {
-    return atomicInteger.incrementAndGet() % maxShardsPerTable;
+  private long getPartitionIndex(AtomicInteger atomicInteger, String tableName) {
+    if (highVolumeTables.contains(tableName.toUpperCase())) {
+      // Partition our higher volume tables
+      return atomicInteger.incrementAndGet() % maxShardsPerTable;
+    }
+    return 0;
   }
 
   /** Default constructor */
@@ -36,7 +48,7 @@ public class BufferManager {
   public Buffer getBuffer(final String database, final String schema, final String table) {
     final TableKey key = new TableKey(database, schema, table);
     AtomicInteger counter = tableToPartitionIndex.computeIfAbsent(key, k -> new AtomicInteger(0));
-    long partitionIndex = getPartitionIndex(counter);
+    long partitionIndex = getPartitionIndex(counter, table);
     TablePartitionKey pk = new TablePartitionKey(database, schema, table, partitionIndex);
     return tableToBuffer.computeIfAbsent(
         pk, k -> new Buffer(database, schema, table, maxBufferRowCount, partitionIndex));
