@@ -17,7 +17,6 @@ public class BufferManager {
 
   static {
     highVolumeTables.add("EDR_DATA");
-    highVolumeTables.add("AUTH_LOGS");
   }
 
   //
