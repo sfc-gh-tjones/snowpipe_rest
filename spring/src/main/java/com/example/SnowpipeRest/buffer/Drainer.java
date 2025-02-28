@@ -173,10 +173,10 @@ public class Drainer {
       while (true) {
         if (abortDueToLimits(drainStartTimeMs, recordsDrained)) {
           logDrainExitCriteriaReached(buffer, recordsDrained);
-          Utils.DrainReason reason =
-              Utils.waitForChannelToDrain(
-                  maxSecondsToWaitToDrain, channel, ingestEngineEpochTs, lastSentOffsetToken);
-          LOGGER.info("Exiting drain loop drainReason={}", reason.name());
+          // Utils.DrainReason reason =
+          //    Utils.waitForChannelToDrain(
+          //        maxSecondsToWaitToDrain, channel, ingestEngineEpochTs, lastSentOffsetToken);
+          // LOGGER.info("Exiting drain loop drainReason={}", reason.name());
           return TerminationReason.SUCCESS;
         }
 
