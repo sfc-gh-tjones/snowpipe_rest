@@ -77,6 +77,12 @@ public class ClientManager {
     if (config.getMaxClientLag() != null) {
       props.put(ParameterProvider.MAX_CLIENT_LAG, config.getMaxClientLag());
     }
+    if (config.getMaxChannelSizeInBytes() > 0) {
+      props.put(ParameterProvider.MAX_CHANNEL_SIZE_IN_BYTES, config.getMaxChannelSizeInBytes());
+    }
+    if (config.getMaxChunkSizeInBytes() > 0) {
+      props.put(ParameterProvider.MAX_CHUNK_SIZE_IN_BYTES, config.getMaxChunkSizeInBytes());
+    }
     props.put(
         ParameterProvider.BDEC_PARQUET_COMPRESSION_ALGORITHM, config.getCompressionAlgorithm());
 

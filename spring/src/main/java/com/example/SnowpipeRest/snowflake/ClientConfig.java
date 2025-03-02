@@ -28,6 +28,49 @@ public class ClientConfig {
   @Value("${rest_api.default_compression_algorithm}")
   private String defaultCompressionAlgorithm;
 
+  @Value("${rest_api.drain_manager_max_channel_size_in_bytes}")
+  private int maxChannelSizeInBytes;
+
+  @Value("${rest_api.drain_manager_max_chunk_size_in_bytes}")
+  private int maxChunkSizeInBytes;
+
+  private void checkEnv(String envName) {
+    String val = System.getenv(envName);
+    if (val == null || val.isEmpty()) {
+      LOGGER.error("Environment variable not set. var={}", envName);
+      throw new RuntimeException("Environment variable not set. var=" + envName);
+    }
+  }
+
+  private long getEnv(String envName) {
+    String envVal = System.getenv(envName);
+    if (envVal == null || envVal.isEmpty()) {
+      return 0;
+    }
+    return Integer.parseInt(envVal);
+  }
+
+  public long getMaxChunkSizeInBytes() {
+    if (maxChunkSizeInBytes <= 0) {
+      String envName = "REST_API_DRAIN_MANAGER_MAX_CHUNK_SIZE_IN_BYTES";
+      LOGGER.info(
+          "Max chunk size in bytes is 0, default to REST_API_DRAIN_MANAGER_MAX_CHUNK_SIZE_IN_BYTES environment variable");
+      return getEnv(envName);
+    }
+    return maxChunkSizeInBytes;
+  }
+
+  public long getMaxChannelSizeInBytes() {
+    if (maxChannelSizeInBytes <= 0) {
+      String envName = "REST_API_DRAIN_MANAGER_MAX_CHANNEL_SIZE_IN_BYTES";
+      LOGGER.info(
+          "Max chunk size in bytes is 0, default to REST_API_DRAIN_MANAGER_MAX_CHANNEL_SIZE_IN_BYTES environment variable");
+      // checkEnv(envName);
+      return getEnv(envName);
+    }
+    return maxChannelSizeInBytes;
+  }
+
   public String getSnowflakeUrl() {
     if (snowflakeUrl == null) {
       LOGGER.info("Defaulting to SNOWFLAKE_URL environment variable");
