@@ -29,6 +29,10 @@ public class BufferManager {
 
   long maxShardsPerTable;
 
+  boolean usePersistentWriteAheadLog;
+
+  private RocksDBManager rocksDBManager;
+
   private long getPartitionIndex(AtomicInteger atomicInteger, String tableName) {
     if (highVolumeTables.contains(tableName.toUpperCase())) {
       // Partition our higher volume tables
@@ -38,11 +42,17 @@ public class BufferManager {
   }
 
   /** Default constructor */
-  public BufferManager(long maxBufferRowCount, long maxShardsPerTable) {
+  public BufferManager(
+      long maxBufferRowCount, long maxShardsPerTable, boolean usePersistentWriteAheadLog) {
     tableToBuffer = new ConcurrentHashMap<>();
     tableToPartitionIndex = new ConcurrentHashMap<>();
     this.maxBufferRowCount = maxBufferRowCount;
     this.maxShardsPerTable = maxShardsPerTable;
+    this.usePersistentWriteAheadLog = usePersistentWriteAheadLog;
+    if (usePersistentWriteAheadLog) {
+      rocksDBManager = new RocksDBManager();
+      rocksDBManager.initialize();
+    }
   }
 
   public Buffer getBuffer(final String database, final String schema, final String table) {
@@ -51,7 +61,16 @@ public class BufferManager {
     long partitionIndex = getPartitionIndex(counter, table);
     TablePartitionKey pk = new TablePartitionKey(database, schema, table, partitionIndex);
     return tableToBuffer.computeIfAbsent(
-        pk, k -> new Buffer(database, schema, table, maxBufferRowCount, partitionIndex));
+        pk,
+        k ->
+            new Buffer(
+                database,
+                schema,
+                table,
+                maxBufferRowCount,
+                partitionIndex,
+                usePersistentWriteAheadLog,
+                rocksDBManager));
   }
 
   public Buffer getBufferWithIndex(

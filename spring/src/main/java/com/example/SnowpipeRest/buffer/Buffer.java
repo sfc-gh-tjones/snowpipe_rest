@@ -1,6 +1,7 @@
 package com.example.SnowpipeRest.buffer;
 
 import com.example.SnowpipeRest.utils.EnqueueResponse;
+import com.example.SnowpipeRest.utils.Utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,12 +38,26 @@ public class Buffer {
   // Our actual row buffer. Map of offset to data
   private final Queue<Pair<Long, Map<String, Object>>> rowBuffer;
 
+  // Related to WAL if we use one
+  private final boolean usePersistentWAL;
+  private long walLastOffsetWritten;
+  private long walLastOffsetRead;
+  // Shared reference
+  private final RocksDBManager rocksDBManager;
+
   /**
    * Default constructor
    *
    * @param maxRowCount the max number of rows that we will accept in this buffer
    */
-  Buffer(String database, String schema, String table, long maxRowCount, long partitionIndex) {
+  Buffer(
+      String database,
+      String schema,
+      String table,
+      long maxRowCount,
+      long partitionIndex,
+      boolean usePersistentWAL,
+      RocksDBManager rocksDBManager) {
     this.database = database;
     this.schema = schema;
     this.table = table;
@@ -52,12 +67,20 @@ public class Buffer {
     this.offsetCounter = 0;
 
     this.rowBuffer = new ConcurrentLinkedQueue<>();
+
+    this.usePersistentWAL = usePersistentWAL;
+    this.rocksDBManager = rocksDBManager;
+    walLastOffsetRead = 0;
+    walLastOffsetWritten = 0;
   }
 
   /**
    * @return whether there are rows to be processed in this buffer
    */
   public boolean hasOutstandingRows() {
+    if (usePersistentWAL) {
+      return walLastOffsetRead < walLastOffsetWritten;
+    }
     return !this.rowBuffer.isEmpty();
   }
 
@@ -78,14 +101,41 @@ public class Buffer {
     return Optional.of(rows);
   }
 
+  Optional<Map<String, Object>> getRowFromPersistedValue(String persistedRow) {
+    Map<String, Object> row;
+    try {
+      JsonNode jsonNode = mapper.readTree(persistedRow);
+      row = mapper.convertValue(jsonNode, new TypeReference<>() {});
+    } catch (JsonProcessingException je) {
+      return Optional.empty();
+    }
+    return Optional.of(row);
+  }
+
   /**
    * This is terribly (and embarrassingly) inefficient, but it'll work for now. Basically increment
    * the latest uncommitted row and advance the pointer. For our V0 dequeue as well but for V1
    * actually just advance a pointer
    */
   public Optional<Pair<Long, Map<String, Object>>> getAndAdvanceLatestUncommittedRow() {
-    Pair<Long, Map<String, Object>> item = rowBuffer.poll();
-    return item == null ? Optional.empty() : Optional.of(item);
+    if (usePersistentWAL) {
+      String key = Utils.getKeyForWAL(database, schema, table, partitionIndex, walLastOffsetRead);
+      Optional<String> data = rocksDBManager.readFromDB(key);
+      if (data.isPresent()) {
+        long offset = walLastOffsetRead;
+        walLastOffsetRead++;
+        Optional<Map<String, Object>> row = getRowFromPersistedValue(data.get());
+        if (row.isPresent()) {
+          return Optional.of(new Pair<>(offset, row.get()));
+        }
+        // LOGGER.error("Unable to convert persisted bytes into serialized row. bytes={}",
+        // data.get());
+      }
+      return Optional.empty();
+    } else {
+      Pair<Long, Map<String, Object>> item = rowBuffer.poll();
+      return item == null ? Optional.empty() : Optional.of(item);
+    }
   }
 
   /** Adds a row to a buffer, checking size to ensure that we can accept it */
@@ -104,7 +154,7 @@ public class Buffer {
    *
    * @param requestBody user supplied string that represents one or more rows
    */
-  public EnqueueResponse expandRowsEnqueueData(String requestBody) {
+  private EnqueueResponse expandRowsEnqueueDataInMem(String requestBody) {
     Optional<List<Map<String, Object>>> rows = getRowsFromRequestBody(requestBody);
     if (rows.isEmpty()) {
       return new EnqueueResponse.EnqueueResponseBuilder()
@@ -127,6 +177,58 @@ public class Buffer {
         .setRowsEnqueued(rowsEnqueued)
         .setRowsRejected(rowsRejected)
         .build();
+  }
+
+  /** Adds a row to a buffer, checking size to ensure that we can accept it */
+  private synchronized boolean addRowToWAL(Map<String, Object> row) {
+    String serializedRow;
+    try {
+      serializedRow = mapper.writeValueAsString(row);
+    } catch (JsonProcessingException e) {
+      LOGGER.error("Unable to serialize row", e);
+      return false;
+    }
+    String key =
+        database + "." + schema + "." + table + "." + partitionIndex + "." + walLastOffsetWritten;
+    rocksDBManager.writeToDB(key, serializedRow);
+    walLastOffsetWritten += 1;
+    offsetCounter += 1;
+    return true;
+  }
+
+  /**
+   * Enqueues data using the WAL
+   *
+   * @param requestBody
+   * @return
+   */
+  private EnqueueResponse expandRowsEnqueueDataWAL(String requestBody) {
+    Optional<List<Map<String, Object>>> rows = getRowsFromRequestBody(requestBody);
+    if (rows.isEmpty()) {
+      return new EnqueueResponse.EnqueueResponseBuilder()
+          .setMessage("Unable to parse request body")
+          .build();
+    }
+    for (Map<String, Object> row : rows.get()) {
+      addRowToWAL(row);
+    }
+    int rowsEnqueued = rows.get().size();
+    int rowsRejected = 0;
+    return new EnqueueResponse.EnqueueResponseBuilder()
+        .setRowsEnqueued(rowsEnqueued)
+        .setRowsRejected(rowsRejected)
+        .build();
+  }
+
+  /**
+   * Given a request body expand to rows and append to a queue
+   *
+   * @param requestBody user supplied string that represents one or more rows
+   */
+  public EnqueueResponse expandRowsEnqueueData(String requestBody) {
+    return usePersistentWAL
+        ? expandRowsEnqueueDataWAL(requestBody)
+        : expandRowsEnqueueDataInMem(requestBody);
   }
 
   public String getDatabase() {

@@ -47,9 +47,10 @@ public class IngestEngine {
       long maxDurationToDrainMs,
       long maxRecordsToDrain,
       int maxSecondsToWaitToDrain,
-      long maxShardsPerTable) {
+      long maxShardsPerTable,
+      boolean persistentWAL) {
     LOGGER.info("Initializing Ingest Engine...");
-    this.bufferManager = new BufferManager(maxBufferRowCount, maxShardsPerTable);
+    this.bufferManager = new BufferManager(maxBufferRowCount, maxShardsPerTable, persistentWAL);
     this.epochTs = System.currentTimeMillis();
     this.drainManager =
         new DrainManager(
@@ -58,7 +59,8 @@ public class IngestEngine {
             (int) numThreads,
             maxDurationToDrainMs,
             maxRecordsToDrain,
-            maxSecondsToWaitToDrain);
+            maxSecondsToWaitToDrain,
+            persistentWAL);
     executorService = Executors.newSingleThreadScheduledExecutor();
     executorService.scheduleWithFixedDelay(drainManager::run, 1, 1, TimeUnit.SECONDS);
     LOGGER.info("Scheduled run of Drain Manager");

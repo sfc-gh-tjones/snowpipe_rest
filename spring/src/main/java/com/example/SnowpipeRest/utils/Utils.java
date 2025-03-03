@@ -117,4 +117,13 @@ public class Utils {
         lastSentOffsetToken);
     return DrainReason.OFFSET_NEVER_MATCHED;
   }
+
+  public static String getKeyForWAL(
+      String database, String schema, String table, long partitionIndex, long offset) {
+    return database + "." + schema + "." + table + "." + partitionIndex + "." + offset;
+  }
+
+  public static long getOffsetFromKey(String key) {
+    return Long.valueOf(key.split(".")[4]);
+  }
 }

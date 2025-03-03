@@ -15,6 +15,7 @@
     <description>REST API for Snowpipe</description>
     <properties>
         <java.version>21</java.version>
+        <rocksdb.version>9.10.0</rocksdb.version>
     </properties>
     <dependencies>
         <!-- Spring -->
@@ -36,6 +37,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.rocksdb</groupId>
+            <artifactId>rocksdbjni</artifactId>
+            <version>${rocksdb.version}</version>
         </dependency>
 
         <!-- Jackson -->

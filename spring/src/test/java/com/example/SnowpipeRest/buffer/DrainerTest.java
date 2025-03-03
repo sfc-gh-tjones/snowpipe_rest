@@ -17,7 +17,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1, false, null);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);
@@ -46,7 +46,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1, false, null);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);
@@ -70,7 +70,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, true, false);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1, false, null);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);
@@ -94,7 +94,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, true, false);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1, false, null);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);
@@ -125,7 +125,7 @@ public class DrainerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, true);
     ChannelManager.setInstance(channelManager);
 
-    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1);
+    Buffer buffer = new Buffer("my_db", "my_sch", "my_table", 2, 1, false, null);
     String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     buffer.expandRowsEnqueueData(requestBody);

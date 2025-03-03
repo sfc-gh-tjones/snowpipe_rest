@@ -17,6 +17,9 @@ public class IngestEngineConfig {
   @Value("${rest_api.buffer_manager_max_shards_per_table}")
   private long maxShardsPerTable;
 
+  @Value("${rest_api.buffer_manager_use_wal}")
+  private boolean useWAL;
+
   @Value("${rest_api.drain_manager_num_threads}")
   private long numThreads;
 
@@ -47,6 +50,11 @@ public class IngestEngineConfig {
       return getEnv("REST_API_BUFFER_MANAGER_MAX_SHARDS_PER_TABLE");
     }
     return maxShardsPerTable;
+  }
+
+  public boolean getUseWAL() {
+    return true;
+    // return useWAL;
   }
 
   public long getMaxBufferRowCount() {

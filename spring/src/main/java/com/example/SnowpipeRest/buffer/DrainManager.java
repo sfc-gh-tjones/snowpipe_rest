@@ -33,6 +33,8 @@ public class DrainManager implements Runnable {
   private final long ingestEngineEpochTs;
   private final int maxSecondsToWaitToDrain;
 
+  private final boolean useWAL;
+
   enum Action {
     ADD_TO_QUEUE,
     REMOVE_FROM_QUEUE
@@ -45,7 +47,8 @@ public class DrainManager implements Runnable {
       int numThreads,
       long maxDurationToDrainMs,
       long maxRecordsToDrain,
-      int maxSecondsToWaitToDrain) {
+      int maxSecondsToWaitToDrain,
+      boolean useWAL) {
     this.ingestEngineEpochTs = ingestEngineEpochTs;
     this.bufferManager = bufferManager;
     executor =
@@ -58,13 +61,15 @@ public class DrainManager implements Runnable {
     this.maxDurationToDrainMs = maxDurationToDrainMs;
     this.maxRecordsToDrain = maxRecordsToDrain;
     this.maxSecondsToWaitToDrain = maxSecondsToWaitToDrain;
+    this.useWAL = useWAL;
 
     LOGGER.info(
-        "Started DrainManager. numThreads={} maxDurationToDrainMs={} maxRecordsToDrain={} maxSecondsToWaitToDrain={}",
+        "Started DrainManager. numThreads={} maxDurationToDrainMs={} maxRecordsToDrain={} maxSecondsToWaitToDrain={} useWAL={}",
         numThreads,
         maxDurationToDrainMs,
         maxRecordsToDrain,
-        maxSecondsToWaitToDrain);
+        maxSecondsToWaitToDrain,
+        useWAL);
   }
 
   @VisibleForTesting

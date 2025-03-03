@@ -23,8 +23,8 @@ public class DrainManagerTest {
 
   @Test
   public void testDrainManagerLifecycle() {
-    BufferManager bufferManager = new BufferManager(100, 1);
-    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 0, 0, 120);
+    BufferManager bufferManager = new BufferManager(100, 1, false);
+    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 0, 0, 120, false);
     assertEquals(0, drainManager.getTableWorkSet().size());
     assertEquals(0, drainManager.getTableWorkQueue().size());
     drainManager.shutdown();
@@ -35,8 +35,8 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(100, 1);
-    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120);
+    BufferManager bufferManager = new BufferManager(100, 1, false);
+    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120, false);
 
     final String databaseName = "my_db";
     final String schemaName = "my_sch";
@@ -64,8 +64,8 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(100, 1);
-    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120);
+    BufferManager bufferManager = new BufferManager(100, 1, false);
+    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120, false);
 
     final String databaseName = "my_db";
     final String schemaName = "my_sch";
@@ -94,8 +94,8 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(100, 1);
-    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120);
+    BufferManager bufferManager = new BufferManager(100, 1, false);
+    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120, false);
 
     final String databaseName = "my_db";
     final String schemaName = "my_sch";
@@ -140,8 +140,8 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(100, 1);
-    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120);
+    BufferManager bufferManager = new BufferManager(100, 1, false);
+    DrainManager drainManager = new DrainManager(1234, bufferManager, 1, 1000, 10, 120, false);
 
     final String databaseName = "my_db";
     final String schemaName = "my_sch";
@@ -185,8 +185,8 @@ public class DrainManagerTest {
     TestChannelManager channelManager = new TestChannelManager(null, false, false);
     ChannelManager.setInstance(channelManager);
 
-    BufferManager bufferManager = new BufferManager(2000, 1);
-    DrainManager drainManager = new DrainManager(1234, bufferManager, 10, 1000, 1000, 120);
+    BufferManager bufferManager = new BufferManager(2000, 1, false);
+    DrainManager drainManager = new DrainManager(1234, bufferManager, 10, 1000, 1000, 120, false);
     final String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
     for (int i = 0; i < 10; i++) {

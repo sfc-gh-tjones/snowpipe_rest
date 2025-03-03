@@ -29,7 +29,8 @@ public class Resource {
                   config.getMaxDurationToDrainMs(),
                   config.getMaxRecordsToDrain(),
                   config.getMaxSecondsToWaitToDrain(),
-                  config.getMaxShardsPerTable());
+                  config.getMaxShardsPerTable(),
+                  config.getUseWAL());
         }
       }
     }
