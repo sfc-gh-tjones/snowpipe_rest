@@ -190,7 +190,10 @@ public class Buffer {
     }
     String key =
         database + "." + schema + "." + table + "." + partitionIndex + "." + walLastOffsetWritten;
-    rocksDBManager.writeToDB(key, serializedRow);
+    boolean wroteToRocksDB = rocksDBManager.writeToDB(key, serializedRow);
+    if (!wroteToRocksDB) {
+      return false;
+    }
     walLastOffsetWritten += 1;
     offsetCounter += 1;
     return true;

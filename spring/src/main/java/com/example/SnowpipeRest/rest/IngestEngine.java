@@ -91,6 +91,7 @@ public class IngestEngine {
    */
   public void shutDown() {
     drainManager.shutdown();
+    bufferManager.tearDown();
     ChannelManager.getInstance().removeAllChannels();
   }
 }

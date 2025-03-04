@@ -40,6 +40,11 @@ public class IngestEngineConfig {
     }
   }
 
+  private boolean isEnvSet(String envName) {
+    String val = System.getenv(envName);
+    return val != null && !val.isEmpty();
+  }
+
   private long getEnv(String envName) {
     return Integer.parseInt(System.getenv(envName));
   }
@@ -53,8 +58,16 @@ public class IngestEngineConfig {
   }
 
   public boolean getUseWAL() {
-    return true;
-    // return useWAL;
+    if (useWAL == false) {
+      // Double check that it is not set at the environment level
+      String env = "REST_API_BUFFER_MANAGER_USE_WAL";
+      boolean isSet = isEnvSet(env);
+      if (isSet) {
+        String val = System.getenv(env);
+        return Boolean.parseBoolean(val);
+      }
+    }
+    return useWAL;
   }
 
   public long getMaxBufferRowCount() {

@@ -58,6 +58,8 @@ the Snowpipe Streaming SDK:
 * `rest_api.buffer_manager_max_buffer_row_count` - the maximum row count that should be buffered in memory for a
   given table. Increasing this may cause memory related exceptions if set to high. Set at a conservative amount
   initially and increase based on throughput and how quickly you drain from a buffer via the `max_client_lag` parameter.
+* `rest_api.buffer_manager_use_wal` - boolean (default false) if true will write data ahead to RocksDB. Will result in
+  lower app memory footprint but depending on the disk may result in variable throughput.
 * `rest_api.buffer_manager_max_shards_per_table` - the maximum number of shards per table. Think of these as Kafka
   topic partitions.
 * `rest_api.max_client_lag` - the max Client lag that should be passed through to the Snowpipe Streaming Client SDK.
@@ -86,6 +88,7 @@ You can set these by environment variable, as well:
 * `SNOWFLAKE_PRIVATE_KEY` for `snowflake.private_key`
 * `REST_API_BUFFER_MANAGER_MAX_BUFFER_ROW_COUNT` for `rest_api.buffer_manager_max_buffer_row_count`
 * `REST_API_BUFFER_MANAGER_MAX_SHARDS_PER_TABLE` for `rest_api.buffer_manager_max_shards_per_table`
+* `REST_API_BUFFER_MANAGER_USE_WAL` for `rest_api.buffer_manager_use_wal`
 * `REST_API_MAX_CLIENT_LAG` for `rest_api.max_client_lag`
 * `REST_API_DRAIN_MANAGER_NUM_THREADS` for `rest_api.drain_manager_num_threads`
 * `REST_API_DRAIN_MANAGER_MAX_DURATION_TO_DRAIN_MS` for `rest_api.drain_manager_max_duration_to_drain_ms`

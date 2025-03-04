@@ -79,12 +79,12 @@ public class BufferManager {
     return tableToBuffer.get(pk);
   }
 
-  /**
-   * Returns the mapping of keys to buffers maintained by this instance
-   *
-   * @return
-   */
+  /** Returns the mapping of keys to buffers maintained by this instance */
   public ConcurrentHashMap<TablePartitionKey, Buffer> getTableToBuffer() {
     return tableToBuffer;
+  }
+
+  public void tearDown() {
+    rocksDBManager.tearDown();
   }
 }
