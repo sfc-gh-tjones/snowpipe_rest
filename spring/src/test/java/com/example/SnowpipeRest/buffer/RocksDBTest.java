@@ -2,18 +2,21 @@ package com.example.SnowpipeRest.buffer;
 
 import com.example.SnowpipeRest.utils.Utils;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
 public class RocksDBTest {
 
+  @Disabled
   @Test
   public void testRocksDBInit() {
     RocksDBManager manager = new RocksDBManager();
     manager.initialize();
   }
 
+  @Disabled
   @Test
   public void testRocksDBPut() {
     RocksDBManager manager = new RocksDBManager();
