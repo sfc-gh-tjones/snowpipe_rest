@@ -157,7 +157,12 @@ public class Buffer {
   private EnqueueResponse expandRowsEnqueueDataInMem(String requestBody) {
     Optional<List<Map<String, Object>>> rows = getRowsFromRequestBody(requestBody);
     if (rows.isEmpty()) {
-      LOGGER.info("Unable to expand rows - invalid payload sent");
+      LOGGER.info(
+          "Unable to expand rows - invalid payload sent db={} schema={} table={} partition={}",
+          database,
+          schema,
+          table,
+          partitionIndex);
       return new EnqueueResponse.EnqueueResponseBuilder()
           .setMessage("Unable to parse request body")
           .build();
@@ -176,7 +181,11 @@ public class Buffer {
     }
     if (rowsRejected > 0) {
       LOGGER.info(
-          "Unable to enqueue rows due to rejected rows. rejected_count={} queue_size={} max_row_count={} queue_full={}",
+          "Unable to enqueue rows due to rejected rows. db={} schema={} table={} partition={} rejected_count={} queue_size={} max_row_count={} queue_full={}",
+          database,
+          schema,
+          table,
+          partitionIndex,
           rows,
           rowBuffer.size(),
           maxRowCount,
