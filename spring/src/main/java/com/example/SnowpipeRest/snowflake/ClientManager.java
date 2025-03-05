@@ -1,5 +1,6 @@
 package com.example.SnowpipeRest.snowflake;
 
+import com.example.SnowpipeRest.utils.TableKey;
 import com.example.SnowpipeRest.utils.TablePartitionKey;
 import com.example.SnowpipeRest.utils.Utils;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestClient;
@@ -21,7 +22,7 @@ public class ClientManager {
 
   private ClientConfig config;
 
-  private ConcurrentHashMap<TablePartitionKey, SnowflakeStreamingIngestClient> clients;
+  private ConcurrentHashMap<TableKey, SnowflakeStreamingIngestClient> clientsPerTable;
 
   private boolean useMultipleClients;
   private SnowflakeStreamingIngestClient singletonClientInstance;
@@ -33,31 +34,30 @@ public class ClientManager {
     this.config = config;
     this.useMultipleClients = config.shouldUseMultipleClients();
     if (!useMultipleClients) {
-      singletonClientInstance = buildSingletonClientInstance(null);
+      singletonClientInstance = buildSingletonClientInstance();
     }
-    this.clients = new ConcurrentHashMap<>();
+    this.clientsPerTable = new ConcurrentHashMap<>();
   }
 
   /** Returns the Client instance (currently a singleton) */
   public SnowflakeStreamingIngestClient getClient(TablePartitionKey tableKey) {
-    SnowflakeStreamingIngestClient clientRet =
-        useMultipleClients
-            ? clients.computeIfAbsent(tableKey, tk -> buildSingletonClientInstance(tableKey))
-            : singletonClientInstance;
-    return clientRet;
+    TableKey tk = new TableKey(tableKey.getDatabase(), tableKey.getSchema(), tableKey.getTable());
+    return useMultipleClients
+        ? clientsPerTable.computeIfAbsent(tk, tkk -> buildSingletonClientInstance())
+        : singletonClientInstance;
   }
 
   /** Verifies the connection by creating a single Client instance not bound to a table */
   public boolean credentialsValid() {
     try {
-      buildSingletonClientInstance(null);
+      buildSingletonClientInstance();
       return true;
     } catch (Exception e) {
       return false;
     }
   }
 
-  SnowflakeStreamingIngestClient buildSingletonClientInstance(TablePartitionKey tablePartitionKey) {
+  SnowflakeStreamingIngestClient buildSingletonClientInstance() {
     if (config == null) {
       LOGGER.error("No configuration provided");
       throw new RuntimeException("Null configuration provided");
@@ -87,10 +87,6 @@ public class ClientManager {
         ParameterProvider.BDEC_PARQUET_COMPRESSION_ALGORITHM, config.getCompressionAlgorithm());
 
     String clientName = "REST_" + Utils.getHostName();
-    if (tablePartitionKey != null) {
-      clientName = clientName + "_" + tablePartitionKey.getPartitionIndex();
-    }
-
     try {
       return SnowflakeStreamingIngestClientFactory.builder(clientName).setProperties(props).build();
     } catch (Exception e) {
