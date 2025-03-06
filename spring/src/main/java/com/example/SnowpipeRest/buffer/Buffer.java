@@ -186,7 +186,19 @@ public class Buffer {
           schema,
           table,
           partitionIndex,
-          rows,
+          rowsRejected,
+          rowBuffer.size(),
+          maxRowCount,
+          rowBuffer.size() == maxRowCount);
+    }
+    if (rowsEnqueued > 0) {
+      LOGGER.info(
+          "Accepted rows to be inserted db={} schema={} table={} partition={} accepted_count={} queue_size={} max_row_count={} queue_full={}",
+          database,
+          schema,
+          table,
+          partitionIndex,
+          rowsEnqueued,
           rowBuffer.size(),
           maxRowCount,
           rowBuffer.size() == maxRowCount);
