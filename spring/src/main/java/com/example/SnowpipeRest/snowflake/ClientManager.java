@@ -91,6 +91,7 @@ public class ClientManager {
     if (config.getMaxChunkSizeInBytes() > 0) {
       props.put(ParameterProvider.MAX_CHUNK_SIZE_IN_BYTES, config.getMaxChunkSizeInBytes());
     }
+    props.put(ParameterProvider.IO_TIME_CPU_RATIO, 0);
     props.put(
         ParameterProvider.BDEC_PARQUET_COMPRESSION_ALGORITHM, config.getCompressionAlgorithm());
 
