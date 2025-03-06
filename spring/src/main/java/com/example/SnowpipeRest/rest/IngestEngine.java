@@ -48,9 +48,12 @@ public class IngestEngine {
       long maxRecordsToDrain,
       int maxSecondsToWaitToDrain,
       long maxShardsPerTable,
+      long maxShardsPerMediumVolumeTable,
       boolean persistentWAL) {
     LOGGER.info("Initializing Ingest Engine...");
-    this.bufferManager = new BufferManager(maxBufferRowCount, maxShardsPerTable, persistentWAL);
+    this.bufferManager =
+        new BufferManager(
+            maxBufferRowCount, maxShardsPerTable, maxShardsPerMediumVolumeTable, persistentWAL);
     this.epochTs = System.currentTimeMillis();
     this.drainManager =
         new DrainManager(

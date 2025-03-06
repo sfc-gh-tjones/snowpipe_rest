@@ -14,9 +14,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BufferManager {
 
   static Set<String> highVolumeTables = new HashSet<>();
+  static Set<String> mediumVolumeTables = new HashSet<>();
 
   static {
     highVolumeTables.add("EDR_DATA");
+    mediumVolumeTables.add("PANW_TRAFFIC_RAW");
   }
 
   //
@@ -27,7 +29,8 @@ public class BufferManager {
 
   long maxBufferRowCount;
 
-  long maxShardsPerTable;
+  long maxShardsPerHighVolumeTable;
+  long maxShardsPerMediumVolumeTable;
 
   boolean usePersistentWriteAheadLog;
 
@@ -36,18 +39,25 @@ public class BufferManager {
   private long getPartitionIndex(AtomicInteger atomicInteger, String tableName) {
     if (highVolumeTables.contains(tableName.toUpperCase())) {
       // Partition our higher volume tables
-      return atomicInteger.incrementAndGet() % maxShardsPerTable;
+      return atomicInteger.incrementAndGet() % maxShardsPerHighVolumeTable;
+    }
+    if (mediumVolumeTables.contains(tableName.toUpperCase())) {
+      return atomicInteger.incrementAndGet() % maxShardsPerMediumVolumeTable;
     }
     return 0;
   }
 
   /** Default constructor */
   public BufferManager(
-      long maxBufferRowCount, long maxShardsPerTable, boolean usePersistentWriteAheadLog) {
+      long maxBufferRowCount,
+      long maxShardsPerHighVolumeTable,
+      long maxShardsPerMediumVolumeTable,
+      boolean usePersistentWriteAheadLog) {
     tableToBuffer = new ConcurrentHashMap<>();
     tableToPartitionIndex = new ConcurrentHashMap<>();
     this.maxBufferRowCount = maxBufferRowCount;
-    this.maxShardsPerTable = maxShardsPerTable;
+    this.maxShardsPerHighVolumeTable = maxShardsPerHighVolumeTable;
+    this.maxShardsPerMediumVolumeTable = maxShardsPerMediumVolumeTable;
     this.usePersistentWriteAheadLog = usePersistentWriteAheadLog;
     if (usePersistentWriteAheadLog) {
       rocksDBManager = new RocksDBManager();

@@ -17,6 +17,9 @@ public class IngestEngineConfig {
   @Value("${rest_api.buffer_manager_max_shards_per_table}")
   private long maxShardsPerTable;
 
+  @Value("${rest_api.buffer_manager_max_shards_per_medium_volume_table}")
+  private long maxShardsPerMediumVolumeTable;
+
   @Value("${rest_api.buffer_manager_use_wal}")
   private boolean useWAL;
 
@@ -55,6 +58,14 @@ public class IngestEngineConfig {
       return getEnv("REST_API_BUFFER_MANAGER_MAX_SHARDS_PER_TABLE");
     }
     return maxShardsPerTable;
+  }
+
+  public long getMaxShardsPerMediumVolumeTable() {
+    if (maxShardsPerMediumVolumeTable <= 0) {
+      checkEnv("REST_API_BUFFER_MANAGER_MAX_SHARDS_PER_MEDIUM_VOLUME_TABLE");
+      return getEnv("REST_API_BUFFER_MANAGER_MAX_SHARDS_PER_MEDIUM_VOLUME_TABLE");
+    }
+    return maxShardsPerMediumVolumeTable;
   }
 
   public boolean getUseWAL() {

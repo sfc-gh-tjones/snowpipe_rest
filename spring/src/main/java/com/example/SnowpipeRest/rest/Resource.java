@@ -30,6 +30,7 @@ public class Resource {
                   config.getMaxRecordsToDrain(),
                   config.getMaxSecondsToWaitToDrain(),
                   config.getMaxShardsPerTable(),
+                  config.getMaxShardsPerMediumVolumeTable(),
                   config.getUseWAL());
         }
       }

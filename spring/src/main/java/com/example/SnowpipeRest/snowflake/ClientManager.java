@@ -42,9 +42,17 @@ public class ClientManager {
   /** Returns the Client instance (currently a singleton) */
   public SnowflakeStreamingIngestClient getClient(TablePartitionKey tableKey) {
     TableKey tk = new TableKey(tableKey.getDatabase(), tableKey.getSchema(), tableKey.getTable());
-    return useMultipleClients
-        ? clientsPerTable.computeIfAbsent(tk, tkk -> buildSingletonClientInstance())
-        : singletonClientInstance;
+    if (useMultipleClients) {
+      if (tableKey.getTable().equals("EDR_DATA")
+          || tableKey.getTable().equals("PANW_TRAFFIC_RAW")) {
+        return clientsPerTable.computeIfAbsent(tk, tkk -> buildSingletonClientInstance());
+      } else {
+        TableKey tableKey1 = new TableKey("ALL", "ALL", "ALL");
+        return clientsPerTable.computeIfAbsent(tableKey1, tkk -> buildSingletonClientInstance());
+      }
+    } else {
+      return singletonClientInstance;
+    }
   }
 
   /** Verifies the connection by creating a single Client instance not bound to a table */
