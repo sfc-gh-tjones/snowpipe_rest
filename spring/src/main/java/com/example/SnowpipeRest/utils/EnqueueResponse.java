@@ -51,5 +51,16 @@ public class EnqueueResponse {
     public EnqueueResponse build() {
       return enqueueResponse;
     }
+
+  }
+
+  public EnqueueResponse merge(EnqueueResponse other) {
+    if (other == null) {
+      return this;
+    }
+
+    this.rowsEnqueued += other.rowsEnqueued;
+    this.rowsRejected += other.rowsRejected;
+    return this;
   }
 }

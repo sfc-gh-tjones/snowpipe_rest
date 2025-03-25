@@ -1,12 +1,17 @@
 package com.example.SnowpipeRest.rest;
 
 import com.example.SnowpipeRest.buffer.DrainManager;
+import com.example.SnowpipeRest.buffer.RowSplitter;
 import com.example.SnowpipeRest.snowflake.ChannelManager;
 import com.example.SnowpipeRest.utils.EnqueueResponse;
 import com.example.SnowpipeRest.buffer.BufferManager;
+import com.example.SnowpipeRest.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +40,9 @@ public class IngestEngine {
   // of the app. This is used to reason about replay and the like later on
   private final long epochTs;
 
+  // If true, we will split late arriving rows into a separate buffer for each table
+  private boolean splitLateArrivingRows;
+
   private final ScheduledExecutorService executorService;
 
   /**
@@ -48,9 +56,11 @@ public class IngestEngine {
       long maxRecordsToDrain,
       int maxSecondsToWaitToDrain,
       long maxShardsPerTable,
-      boolean persistentWAL) {
+      boolean persistentWAL,
+      boolean splitLateArrivingRows) {
     LOGGER.info("Initializing Ingest Engine...");
     this.bufferManager = new BufferManager(maxBufferRowCount, maxShardsPerTable, persistentWAL);
+    this.splitLateArrivingRows = splitLateArrivingRows;
     this.epochTs = System.currentTimeMillis();
     this.drainManager =
         new DrainManager(
@@ -77,7 +87,23 @@ public class IngestEngine {
    */
   public EnqueueResponse enqueueData(
       final String database, final String schema, final String table, final String requestData) {
-    return bufferManager.getBuffer(database, schema, table).expandRowsEnqueueData(requestData);
+    Optional<List<Map<String, Object>>> rows = Utils.getRowsFromRequestBody(requestData);
+
+    if (splitLateArrivingRows) {
+      RowSplitter.SplitResult splitResult = RowSplitter.splitLateArrivingRows(rows, table);
+
+      EnqueueResponse lateRowsResponse = null;
+      if (!splitResult.lateRows().isEmpty()){
+        LOGGER.info("Splitting late arriving rows");
+        lateRowsResponse = bufferManager.getLateArrivingRowsBuffer(database, schema, table).expandRowsEnqueueData(Optional.of(splitResult.lateRows()));
+      }
+
+      EnqueueResponse response = bufferManager.getBuffer(database, schema, table).expandRowsEnqueueData(Optional.of(splitResult.regularRows()));
+      response.merge(lateRowsResponse);
+      return response;
+    }
+
+    return bufferManager.getBuffer(database, schema, table).expandRowsEnqueueData(rows);
   }
 
   /**

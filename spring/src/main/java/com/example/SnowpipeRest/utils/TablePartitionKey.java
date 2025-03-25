@@ -2,6 +2,8 @@ package com.example.SnowpipeRest.utils;
 
 import java.util.Objects;
 
+import static com.example.SnowpipeRest.utils.Utils.LATE_ARRIVING_PARTITION_INDEX;
+
 public class TablePartitionKey {
 
   private String database;
@@ -30,6 +32,10 @@ public class TablePartitionKey {
 
   public long getPartitionIndex() {
     return partitionIndex;
+  }
+
+  public boolean isLateArrivingPartition() {
+    return partitionIndex == LATE_ARRIVING_PARTITION_INDEX;
   }
 
   @Override

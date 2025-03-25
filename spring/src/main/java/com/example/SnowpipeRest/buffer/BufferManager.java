@@ -4,8 +4,7 @@ import com.example.SnowpipeRest.utils.TableKey;
 import com.example.SnowpipeRest.utils.TablePartitionKey;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,9 +30,12 @@ public class BufferManager {
 
   boolean usePersistentWriteAheadLog;
 
+  boolean splitLateArrivingRows;
+
   private RocksDBManager rocksDBManager;
 
   private long getPartitionIndex(AtomicInteger atomicInteger, String tableName) {
+
     if (highVolumeTables.contains(tableName.toUpperCase())) {
       // Partition our higher volume tables
       return atomicInteger.incrementAndGet() % maxShardsPerTable;
@@ -55,8 +57,23 @@ public class BufferManager {
     }
   }
 
+  public Buffer getLateArrivingRowsBuffer(final String database, final String schema, final String table) {
+    TablePartitionKey pk = new TablePartitionKey(database, schema, table, -1);
+    return tableToBuffer.computeIfAbsent(
+            pk,
+            k ->
+                    new Buffer(
+                            database,
+                            schema,
+                            table,
+                            maxBufferRowCount,
+                            -1, // we will reserve partition index -1 for late arriving rows
+                            usePersistentWriteAheadLog,
+                            rocksDBManager));
+  }
+
   public Buffer getBuffer(final String database, final String schema, final String table) {
-    final TableKey key = new TableKey(database, schema, table);
+    final TableKey key = new TableKey(database, schema, table, false);
     AtomicInteger counter = tableToPartitionIndex.computeIfAbsent(key, k -> new AtomicInteger(0));
     long partitionIndex = getPartitionIndex(counter, table);
     TablePartitionKey pk = new TablePartitionKey(database, schema, table, partitionIndex);
@@ -87,4 +104,5 @@ public class BufferManager {
   public void tearDown() {
     rocksDBManager.tearDown();
   }
+
 }

@@ -30,7 +30,8 @@ public class Resource {
                   config.getMaxRecordsToDrain(),
                   config.getMaxSecondsToWaitToDrain(),
                   config.getMaxShardsPerTable(),
-                  config.getUseWAL());
+                  config.getUseWAL(),
+                  config.getSplitLateArrivingRows());
         }
       }
     }

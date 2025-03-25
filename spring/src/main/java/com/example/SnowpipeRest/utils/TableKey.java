@@ -2,7 +2,7 @@ package com.example.SnowpipeRest.utils;
 
 import java.util.Objects;
 
-public record TableKey(String database, String schema, String table) {
+public record TableKey(String database, String schema, String table, boolean isLateArrivingClient) {
 
   @Override
   public boolean equals(Object obj) {
@@ -11,6 +11,7 @@ public record TableKey(String database, String schema, String table) {
     TableKey other = (TableKey) obj;
     return database.equals(other.database)
         && Objects.equals(schema, other.schema)
-        && Objects.equals(table, other.table);
+        && Objects.equals(table, other.table)
+        && Objects.equals(isLateArrivingClient, other.isLateArrivingClient);
   }
 }
