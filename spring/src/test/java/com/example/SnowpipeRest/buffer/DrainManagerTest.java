@@ -7,7 +7,6 @@ import net.snowflake.ingest.utils.Pair;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -44,7 +43,7 @@ public class DrainManagerTest {
     final String tableName = "my_table";
     final String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
-    bufferManager.getBuffer(databaseName, schemaName, tableName, Optional.empty()).expandRowsEnqueueData(requestBody);
+    bufferManager.getBuffer(databaseName, schemaName, tableName).expandRowsEnqueueData(requestBody);
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
     executor.execute(drainManager);
@@ -73,11 +72,11 @@ public class DrainManagerTest {
     final String tableName = "my_table";
     final String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
-    bufferManager.getBuffer(databaseName, schemaName, tableName, Optional.empty()).expandRowsEnqueueData(requestBody);
+    bufferManager.getBuffer(databaseName, schemaName, tableName).expandRowsEnqueueData(requestBody);
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
     executor.execute(drainManager);
-    bufferManager.getBuffer(databaseName, schemaName, tableName, Optional.empty()).expandRowsEnqueueData(requestBody);
+    bufferManager.getBuffer(databaseName, schemaName, tableName).expandRowsEnqueueData(requestBody);
     Thread.sleep(5000);
     executor.shutdown();
 
@@ -103,7 +102,7 @@ public class DrainManagerTest {
     final String tableName = "my_table";
     final String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
-    bufferManager.getBuffer(databaseName, schemaName, tableName, Optional.empty()).expandRowsEnqueueData(requestBody);
+    bufferManager.getBuffer(databaseName, schemaName, tableName).expandRowsEnqueueData(requestBody);
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
     executor.execute(drainManager);
@@ -119,8 +118,8 @@ public class DrainManagerTest {
     verifyRowsForChannel(channel, 2);
 
     // Now insert two more rows and run the executor again
-    bufferManager.getBuffer(databaseName, schemaName, tableName, Optional.empty()).expandRowsEnqueueData(requestBody);
-    assertTrue(bufferManager.getBuffer(databaseName, schemaName, tableName, Optional.empty()).hasOutstandingRows());
+    bufferManager.getBuffer(databaseName, schemaName, tableName).expandRowsEnqueueData(requestBody);
+    assertTrue(bufferManager.getBuffer(databaseName, schemaName, tableName).hasOutstandingRows());
     executor = Executors.newSingleThreadExecutor();
     executor.execute(drainManager);
     Thread.sleep(5000);
@@ -149,13 +148,13 @@ public class DrainManagerTest {
     final String tableName = "my_table";
     final String requestBody =
         "[{\"some_int\": 1, \"some_string\": \"one\"}, {\"some_int\": 2, \"some_string\": \"two\"}]";
-    bufferManager.getBuffer(databaseName, schemaName, tableName, Optional.empty()).expandRowsEnqueueData(requestBody);
+    bufferManager.getBuffer(databaseName, schemaName, tableName).expandRowsEnqueueData(requestBody);
 
     final String databaseName2 = "my_db_2";
     final String schemaName2 = "my_sch_2";
     final String tableName2 = "my_table_2";
     bufferManager
-        .getBuffer(databaseName2, schemaName2, tableName2, Optional.empty())
+        .getBuffer(databaseName2, schemaName2, tableName2)
         .expandRowsEnqueueData(requestBody);
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -196,7 +195,7 @@ public class DrainManagerTest {
       String tableName = "my_schema_" + i;
       for (int j = 0; j < 1000; j++) {
         bufferManager
-            .getBuffer(databaseName, schemaName, tableName, Optional.empty())
+            .getBuffer(databaseName, schemaName, tableName)
             .expandRowsEnqueueData(requestBody);
       }
     }

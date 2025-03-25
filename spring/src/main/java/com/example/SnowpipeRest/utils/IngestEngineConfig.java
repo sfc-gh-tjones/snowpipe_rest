@@ -20,6 +20,9 @@ public class IngestEngineConfig {
   @Value("${rest_api.buffer_manager_use_wal}")
   private boolean useWAL;
 
+  @Value("${rest_api.split_late_arriving_rows}")
+  private boolean splitLateArrivingRows;
+
   @Value("${rest_api.drain_manager_num_threads}")
   private long numThreads;
 
@@ -118,5 +121,18 @@ public class IngestEngineConfig {
       return (int) getEnv("REST_API_DRAIN_MANAGER_MAX_SECONDS_TO_WAIT_TO_DRAIN");
     }
     return maxSecondsToWaitToDrain;
+  }
+
+  public boolean getSplitLateArrivingRows() {
+    if (!splitLateArrivingRows) {
+      // Double check that it is not set at the environment level
+      String env = "REST_API_BUFFER_MANAGER_SPLIT_LATE_ARRIVING_ROWS";
+      boolean isSet = isEnvSet(env);
+      if (isSet) {
+        String val = System.getenv(env);
+        return Boolean.parseBoolean(val);
+      }
+    }
+    return splitLateArrivingRows;
   }
 }
