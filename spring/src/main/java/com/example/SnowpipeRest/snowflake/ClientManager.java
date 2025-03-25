@@ -52,7 +52,7 @@ public class ClientManager {
       // If we are using multiple clients, we will create a new client for each table + late arriving combination
       TableKey tk = new TableKey(tableKey.getDatabase(), tableKey.getSchema(), tableKey.getTable(), tableKey.isLateArrivingPartition());
       return clientsPerTable.computeIfAbsent(tk, tkk -> buildSingletonClientInstance());
-    }else {
+    } else {
       if (useSecondClientForLateArrivingPartitions && tableKey.isLateArrivingPartition()) {
         // If secondary client is enabled, we will use the late arriving client for late arriving partitions
         return singletonLateArrivingClientInstance;

@@ -12,12 +12,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class BufferManager {
 
-  static Map<String, String> lateArrivingTableColumns = new HashMap<>();
-
-  static {
-    lateArrivingTableColumns.put("EDR_DATA", "GENERATEDTIME");
-  }
-
   static Set<String> highVolumeTables = new HashSet<>();
 
   static {

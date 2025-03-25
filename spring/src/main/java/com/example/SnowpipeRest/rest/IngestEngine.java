@@ -40,6 +40,7 @@ public class IngestEngine {
   // of the app. This is used to reason about replay and the like later on
   private final long epochTs;
 
+  // If true, we will split late arriving rows into a separate buffer for each table
   private boolean splitLateArrivingRows;
 
   private final ScheduledExecutorService executorService;
