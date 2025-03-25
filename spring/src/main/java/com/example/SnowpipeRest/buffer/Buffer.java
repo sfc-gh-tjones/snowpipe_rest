@@ -84,22 +84,7 @@ public class Buffer {
     return !this.rowBuffer.isEmpty();
   }
 
-  /**
-   * Returns rows if valid input, empty if otherwise
-   *
-   * @param requestBody the application provided row in a serialized format
-   * @return rows if we can parse them, empty otherwise
-   */
-  Optional<List<Map<String, Object>>> getRowsFromRequestBody(String requestBody) {
-    List<Map<String, Object>> rows;
-    try {
-      JsonNode jsonNode = mapper.readTree(requestBody);
-      rows = mapper.convertValue(jsonNode, new TypeReference<>() {});
-    } catch (JsonProcessingException je) {
-      return Optional.empty();
-    }
-    return Optional.of(rows);
-  }
+
 
   Optional<Map<String, Object>> getRowFromPersistedValue(String persistedRow) {
     Map<String, Object> row;
@@ -154,8 +139,7 @@ public class Buffer {
    *
    * @param requestBody user supplied string that represents one or more rows
    */
-  private EnqueueResponse expandRowsEnqueueDataInMem(String requestBody) {
-    Optional<List<Map<String, Object>>> rows = getRowsFromRequestBody(requestBody);
+  private EnqueueResponse expandRowsEnqueueDataInMem(Optional<List<Map<String, Object>>> rows) {
     if (rows.isEmpty()) {
       LOGGER.info(
           "Unable to expand rows - invalid payload sent db={} schema={} table={} partition={}",
@@ -235,8 +219,7 @@ public class Buffer {
    * @param requestBody
    * @return
    */
-  private EnqueueResponse expandRowsEnqueueDataWAL(String requestBody) {
-    Optional<List<Map<String, Object>>> rows = getRowsFromRequestBody(requestBody);
+  private EnqueueResponse expandRowsEnqueueDataWAL(Optional<List<Map<String, Object>>> rows) {
     if (rows.isEmpty()) {
       return new EnqueueResponse.EnqueueResponseBuilder()
           .setMessage("Unable to parse request body")
@@ -259,9 +242,21 @@ public class Buffer {
    * @param requestBody user supplied string that represents one or more rows
    */
   public EnqueueResponse expandRowsEnqueueData(String requestBody) {
+    Optional<List<Map<String, Object>>> rows = Utils.getRowsFromRequestBody(requestBody);
     return usePersistentWAL
-        ? expandRowsEnqueueDataWAL(requestBody)
-        : expandRowsEnqueueDataInMem(requestBody);
+        ? expandRowsEnqueueDataWAL(rows)
+        : expandRowsEnqueueDataInMem(rows);
+  }
+
+  /**
+   * Given a request body expand to rows and append to a queue
+   *
+   * @param rows user supplied string that represents one or more rows
+   */
+  public EnqueueResponse expandRowsEnqueueData(Optional<List<Map<String, Object>>> rows) {
+    return usePersistentWAL
+            ? expandRowsEnqueueDataWAL(rows)
+            : expandRowsEnqueueDataInMem(rows);
   }
 
   public String getDatabase() {

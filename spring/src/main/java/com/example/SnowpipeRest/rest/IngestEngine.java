@@ -4,9 +4,13 @@ import com.example.SnowpipeRest.buffer.DrainManager;
 import com.example.SnowpipeRest.snowflake.ChannelManager;
 import com.example.SnowpipeRest.utils.EnqueueResponse;
 import com.example.SnowpipeRest.buffer.BufferManager;
+import com.example.SnowpipeRest.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -77,7 +81,8 @@ public class IngestEngine {
    */
   public EnqueueResponse enqueueData(
       final String database, final String schema, final String table, final String requestData) {
-    return bufferManager.getBuffer(database, schema, table).expandRowsEnqueueData(requestData);
+    Optional<List<Map<String, Object>>> rows = Utils.getRowsFromRequestBody(requestData);
+    return bufferManager.getBuffer(database, schema, table, rows).expandRowsEnqueueData(rows);
   }
 
   /**

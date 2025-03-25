@@ -4,8 +4,7 @@ import com.example.SnowpipeRest.utils.TableKey;
 import com.example.SnowpipeRest.utils.TablePartitionKey;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,7 +54,7 @@ public class BufferManager {
     }
   }
 
-  public Buffer getBuffer(final String database, final String schema, final String table) {
+  public Buffer getBuffer(final String database, final String schema, final String table, Optional<List<Map<String, Object>>> rows) {
     final TableKey key = new TableKey(database, schema, table);
     AtomicInteger counter = tableToPartitionIndex.computeIfAbsent(key, k -> new AtomicInteger(0));
     long partitionIndex = getPartitionIndex(counter, table);

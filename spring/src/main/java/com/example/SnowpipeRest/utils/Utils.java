@@ -1,16 +1,26 @@
 package com.example.SnowpipeRest.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.ingest.streaming.SnowflakeStreamingIngestChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /** Set of utilities used across channels and the application */
 public class Utils {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
+
+  private static final ObjectMapper mapper = new ObjectMapper();
+
 
   public enum DrainReason {
     INVALID_EPOCH,
@@ -125,5 +135,22 @@ public class Utils {
 
   public static long getOffsetFromKey(String key) {
     return Long.valueOf(key.split(".")[4]);
+  }
+
+  /**
+   * Returns rows if valid input, empty if otherwise
+   *
+   * @param requestBody the application provided row in a serialized format
+   * @return rows if we can parse them, empty otherwise
+   */
+  public static Optional<List<Map<String, Object>>> getRowsFromRequestBody(String requestBody) {
+    List<Map<String, Object>> rows;
+    try {
+      JsonNode jsonNode = mapper.readTree(requestBody);
+      rows = mapper.convertValue(jsonNode, new TypeReference<>() {});
+    } catch (JsonProcessingException je) {
+      return Optional.empty();
+    }
+    return Optional.of(rows);
   }
 }
