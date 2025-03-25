@@ -79,7 +79,7 @@ public class BufferManager {
   }
 
   public Buffer getBuffer(final String database, final String schema, final String table) {
-    final TableKey key = new TableKey(database, schema, table);
+    final TableKey key = new TableKey(database, schema, table, false);
     AtomicInteger counter = tableToPartitionIndex.computeIfAbsent(key, k -> new AtomicInteger(0));
     long partitionIndex = getPartitionIndex(counter, table);
     TablePartitionKey pk = new TablePartitionKey(database, schema, table, partitionIndex);

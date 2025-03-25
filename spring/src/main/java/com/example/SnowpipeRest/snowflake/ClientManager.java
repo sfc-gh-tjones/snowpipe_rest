@@ -25,7 +25,9 @@ public class ClientManager {
   private ConcurrentHashMap<TableKey, SnowflakeStreamingIngestClient> clientsPerTable;
 
   private boolean useMultipleClients;
+  private boolean useSecondClientForLateArrivingPartitions;
   private SnowflakeStreamingIngestClient singletonClientInstance;
+  private SnowflakeStreamingIngestClient singletonLateArrivingClientInstance;
 
   /** Initializes a Client manager backed by a single Snowpipe Streaming Client instance */
   public ClientManager() {}
@@ -33,18 +35,31 @@ public class ClientManager {
   public void init(ClientConfig config) {
     this.config = config;
     this.useMultipleClients = config.shouldUseMultipleClients();
+    this.useSecondClientForLateArrivingPartitions = config.shouldUseSecondaryClientForLateArriving();
     if (!useMultipleClients) {
       singletonClientInstance = buildSingletonClientInstance();
+      if (useSecondClientForLateArrivingPartitions) {
+        singletonLateArrivingClientInstance = buildSingletonClientInstance();
+      }
     }
     this.clientsPerTable = new ConcurrentHashMap<>();
   }
 
   /** Returns the Client instance (currently a singleton) */
   public SnowflakeStreamingIngestClient getClient(TablePartitionKey tableKey) {
-    TableKey tk = new TableKey(tableKey.getDatabase(), tableKey.getSchema(), tableKey.getTable());
-    return useMultipleClients
-        ? clientsPerTable.computeIfAbsent(tk, tkk -> buildSingletonClientInstance())
-        : singletonClientInstance;
+
+    if (useMultipleClients){
+      // If we are using multiple clients, we will create a new client for each table + late arriving combination
+      TableKey tk = new TableKey(tableKey.getDatabase(), tableKey.getSchema(), tableKey.getTable(), tableKey.isLateArrivingPartition());
+      return clientsPerTable.computeIfAbsent(tk, tkk -> buildSingletonClientInstance());
+    }else {
+      if (useSecondClientForLateArrivingPartitions && tableKey.isLateArrivingPartition()) {
+        // If secondary client is enabled, we will use the late arriving client for late arriving partitions
+        return singletonLateArrivingClientInstance;
+      }
+      // Otherwise, we will use the singleton client
+      return singletonClientInstance;
+    }
   }
 
   /** Verifies the connection by creating a single Client instance not bound to a table */

@@ -21,6 +21,7 @@ public class Utils {
 
   private static final ObjectMapper mapper = new ObjectMapper();
 
+  public static final long LATE_ARRIVING_PARTITION_INDEX = -1;
 
   public enum DrainReason {
     INVALID_EPOCH,

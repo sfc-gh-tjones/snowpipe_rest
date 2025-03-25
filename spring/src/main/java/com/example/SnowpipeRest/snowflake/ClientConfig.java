@@ -34,6 +34,7 @@ public class ClientConfig {
   @Value("${rest_api.drain_manager_max_chunk_size_in_bytes}")
   private int maxChunkSizeInBytes;
 
+
   private void checkEnv(String envName) {
     String val = System.getenv(envName);
     if (val == null || val.isEmpty()) {
@@ -116,6 +117,15 @@ public class ClientConfig {
     if (isSet == null || isSet.isEmpty()) {
       LOGGER.info("Defaulting to using multiple clients");
       return true;
+    }
+    return Boolean.parseBoolean(isSet);
+  }
+
+  public boolean shouldUseSecondaryClientForLateArriving() {
+    String isSet = System.getenv("REST_API_USE_SECONDARY_CLIENT_FOR_LATE_ARRIVING");
+    if (isSet == null || isSet.isEmpty()) {
+      LOGGER.info("Defaulting to not using secondary client for late arriving");
+      return false;
     }
     return Boolean.parseBoolean(isSet);
   }
