@@ -94,7 +94,6 @@ public class IngestEngine {
 
       EnqueueResponse lateRowsResponse = null;
       if (!splitResult.lateRows().isEmpty()){
-        LOGGER.info("Splitting late arriving rows");
         lateRowsResponse = bufferManager.getLateArrivingRowsBuffer(database, schema, table).expandRowsEnqueueData(Optional.of(splitResult.lateRows()));
       }
 

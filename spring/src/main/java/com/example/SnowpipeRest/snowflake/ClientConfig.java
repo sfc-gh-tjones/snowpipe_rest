@@ -25,6 +25,9 @@ public class ClientConfig {
   @Value("${rest_api.max_client_lag}")
   private String maxClientLag;
 
+  @Value("${rest_api.late_arriving_max_client_lag}")
+  private String lateArrivingMaxClientLag;
+
   @Value("${rest_api.default_compression_algorithm}")
   private String defaultCompressionAlgorithm;
 
@@ -102,6 +105,14 @@ public class ClientConfig {
       return System.getenv("SNOWFLAKE_PRIVATE_KEY");
     }
     return snowflakePrivateKey;
+  }
+
+  public String getLateArrivingMaxClientLag() {
+    if (lateArrivingMaxClientLag == null) {
+      LOGGER.info("Defaulting to REST_API_LATE_ARRIVING_MAX_CLIENT_LAG environment variable");
+      return System.getenv("REST_API_LATE_ARRIVING_MAX_CLIENT_LAG");
+    }
+    return lateArrivingMaxClientLag;
   }
 
   public String getMaxClientLag() {
