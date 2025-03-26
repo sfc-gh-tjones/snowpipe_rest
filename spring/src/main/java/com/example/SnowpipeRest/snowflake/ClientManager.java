@@ -37,9 +37,9 @@ public class ClientManager {
     this.useMultipleClients = config.shouldUseMultipleClients();
     this.useSecondClientForLateArrivingPartitions = config.shouldUseSecondaryClientForLateArriving();
     if (!useMultipleClients) {
-      singletonClientInstance = buildSingletonClientInstance();
+      singletonClientInstance = buildSingletonClientInstance(false);
       if (useSecondClientForLateArrivingPartitions) {
-        singletonLateArrivingClientInstance = buildSingletonClientInstance();
+        singletonLateArrivingClientInstance = buildSingletonClientInstance(true);
       }
     }
     this.clientsPerTable = new ConcurrentHashMap<>();
@@ -51,7 +51,7 @@ public class ClientManager {
     if (useMultipleClients){
       // If we are using multiple clients, we will create a new client for each table + late arriving combination
       TableKey tk = new TableKey(tableKey.getDatabase(), tableKey.getSchema(), tableKey.getTable(), tableKey.isLateArrivingPartition());
-      return clientsPerTable.computeIfAbsent(tk, tkk -> buildSingletonClientInstance());
+      return clientsPerTable.computeIfAbsent(tk, tkk -> buildSingletonClientInstance(tkk.isLateArrivingClient()));
     } else {
       if (useSecondClientForLateArrivingPartitions && tableKey.isLateArrivingPartition()) {
         // If secondary client is enabled, we will use the late arriving client for late arriving partitions
@@ -65,14 +65,14 @@ public class ClientManager {
   /** Verifies the connection by creating a single Client instance not bound to a table */
   public boolean credentialsValid() {
     try {
-      buildSingletonClientInstance();
+      buildSingletonClientInstance(false);
       return true;
     } catch (Exception e) {
       return false;
     }
   }
 
-  SnowflakeStreamingIngestClient buildSingletonClientInstance() {
+  SnowflakeStreamingIngestClient buildSingletonClientInstance(boolean isLateArrivingClient) {
     if (config == null) {
       LOGGER.error("No configuration provided");
       throw new RuntimeException("Null configuration provided");
@@ -89,8 +89,9 @@ public class ClientManager {
     props.put("user", config.getSnowflakeUser());
     props.put("role", config.getSnowflakeRole());
     props.put("private_key", config.getSnowflakePrivateKey());
-    if (config.getMaxClientLag() != null) {
-      props.put(ParameterProvider.MAX_CLIENT_LAG, config.getMaxClientLag());
+    String maxLag = isLateArrivingClient ? config.getLateArrivingMaxClientLag() : config.getMaxClientLag();
+    if (maxLag != null) {
+      props.put(ParameterProvider.MAX_CLIENT_LAG, maxLag);
     }
     if (config.getMaxChannelSizeInBytes() > 0) {
       props.put(ParameterProvider.MAX_CHANNEL_SIZE_IN_BYTES, config.getMaxChannelSizeInBytes());
