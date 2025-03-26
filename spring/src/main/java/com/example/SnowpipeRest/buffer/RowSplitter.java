@@ -87,13 +87,18 @@ public class RowSplitter {
         } else if (timestampObj instanceof Instant) {
           eventTime = (Instant) timestampObj;
         } else if (timestampObj instanceof String) {
-          // Attempt to parse common ISO format
+          // Attempt to parse as Long (epoch millis)
           try {
-            eventTime = Instant.parse((String) timestampObj);
-          } catch (DateTimeParseException e) {
-            LOGGER.error("Could not parse timestamp string: {} for row: {}. Treating as regular.", timestampObj, row);
-            regularRows.add(row);
-            continue;
+            eventTime = Instant.ofEpochMilli(Long.parseLong((String) timestampObj)*1000);
+          } catch (NumberFormatException e) {
+            // Not a Long, try to parse as Instant
+            try {
+              eventTime = Instant.parse((String) timestampObj);
+            } catch (DateTimeParseException ex) {
+              LOGGER.error("Could not parse timestamp string: {} for row: {}. Treating as regular.", timestampObj, row);
+              regularRows.add(row);
+              continue;
+            }
           }
         } else {
           // Log or handle unsupported type - treat as regular for now
@@ -104,10 +109,8 @@ public class RowSplitter {
 
         // Perform the lateness check
         if (eventTime != null && eventTime.isBefore(lateThreshold)) {
-          // System.out.println("LATE: " + eventTime + " // Row: " + row); // Debug
           lateRows.add(row);
         } else {
-          // System.out.println("REGULAR: " + eventTime + " // Row: " + row); // Debug
           regularRows.add(row);
         }
 
