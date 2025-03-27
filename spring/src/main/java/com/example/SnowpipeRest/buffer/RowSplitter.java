@@ -23,6 +23,9 @@ public class RowSplitter {
 
   static {
     lateArrivingTableColumns.put("EDR_DATA", "GENERATEDTIME");
+    lateArrivingTableColumns.put("AUTH_LOGS", "GENERATEDTIME");
+    lateArrivingTableColumns.put("PANW_NGFW_TRAFFIC_RAW", "_TIME");
+    lateArrivingTableColumns.put("PANW_NGFW_URL_RAW", "_TIME");
     // Add other table/column mappings here
   }
 
