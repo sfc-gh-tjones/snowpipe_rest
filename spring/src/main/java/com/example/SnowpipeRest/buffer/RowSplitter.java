@@ -90,22 +90,27 @@ public class RowSplitter {
         } else if (timestampObj instanceof Instant) {
           eventTime = (Instant) timestampObj;
         } else if (timestampObj instanceof String) {
-          // Attempt to parse as Long (epoch millis)
+          String timestampStr = (String) timestampObj;
           try {
-            eventTime = Instant.ofEpochMilli(Long.parseLong((String) timestampObj)*1000);
-          } catch (NumberFormatException e) {
-            // Not a Long, try to parse as Instant
+            // Attempt 1: Parse using Instant.parse (handles ISO with offset/zone like 'Z')
+            eventTime = Instant.parse(timestampStr);
+          } catch (DateTimeParseException exInstant) {
+            // Instant.parse failed, try parsing as LocalDateTime (no offset) and assume UTC
             try {
-              eventTime = Instant.parse((String) timestampObj);
-            } catch (DateTimeParseException ex) {
-              LOGGER.error("Could not parse timestamp string: {} for row: {}. Treating as regular.", timestampObj, row);
+              // Attempt 2: Parse as LocalDateTime (e.g., "2025-03-21T16:59:55")
+              LocalDateTime localDateTime = LocalDateTime.parse(timestampStr);
+              // Assume UTC if no offset was provided
+              eventTime = localDateTime.toInstant(ZoneOffset.UTC);
+            } catch (DateTimeParseException exLocal) {
+              // All parsing attempts failed
+              LOGGER.info("Could not parse timestamp string: {}. Neither ISO with offset, nor LocalDateTime. Treating as regular row.", timestampStr, exLocal);
               regularRows.add(row);
-              continue;
+              continue; // Move to the next row
             }
           }
         } else {
           // Log or handle unsupported type - treat as regular for now
-          LOGGER.error("Unsupported timestamp type: {} for row: {}. Treating as regular.", timestampObj.getClass().getName(), row);
+          LOGGER.info("Unsupported timestamp type: {} for row: {}. Treating as regular.", timestampObj.getClass().getName(), row);
           regularRows.add(row);
           continue;
         }

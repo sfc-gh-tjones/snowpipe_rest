@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.sql.Timestamp; // Needed for explicit java.sql.Timestamp testing
 
@@ -25,6 +28,13 @@ class RowSplitterTest {
     private Instant regularTime;   // Clearly newer than threshold
     private Instant edgeLateTime;  // Just barely older than threshold
     private Instant edgeRegularTime; // Just barely newer than threshold
+
+    // Formatters for specific string tests
+    private static final DateTimeFormatter ISO_WITH_MILLIS_ZONE = DateTimeFormatter.ISO_INSTANT;
+    // Formatter for ISO date-time WITHOUT offset/zone and WITHOUT milliseconds
+    private static final DateTimeFormatter ISO_WITHOUT_MILLIS_ZONE = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+
 
     @BeforeEach
     void setUp() {
@@ -316,5 +326,93 @@ class RowSplitterTest {
         assertTrue(regularIds.contains(206));
         assertTrue(regularIds.contains(207));
         assertTrue(regularIds.contains(208));
+    }
+
+
+    @Test
+    void testSplitRows_withLateRow_StringTimestampNoMillis() {
+        // Assuming lateTime is 2025-03-26T14:30:XX... and threshold is 2025-03-26T14:40:XX...
+        // Construct a string representing a time clearly before the threshold in the target format
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        String lateTimeString = lateTime.atOffset(java.time.ZoneOffset.UTC).format(formatter); // Format without millis/zone
+
+        List<Map<String, Object>> rows = Collections.singletonList(createRow(52, lateTimeString));
+        RowSplitter.SplitResult result = RowSplitter.splitLateArrivingRows(Optional.of(rows), CONFIGURED_TABLE);
+        assertEquals(1, result.lateRows().size());
+        assertEquals(0, result.regularRows().size());
+        assertEquals(52, result.lateRows().get(0).get("ID"));
+    }
+
+    @Test
+    void testSplitRows_withRegularRow_StringTimestampNoMillis() {
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        String regularTimeString = regularTime.atOffset(java.time.ZoneOffset.UTC).format(formatter);
+
+        List<Map<String, Object>> rows = Collections.singletonList(createRow(53, regularTimeString));
+        RowSplitter.SplitResult result = RowSplitter.splitLateArrivingRows(Optional.of(rows), CONFIGURED_TABLE);
+        assertEquals(0, result.lateRows().size());
+        assertEquals(1, result.regularRows().size());
+        assertEquals(53, result.regularRows().get(0).get("ID"));
+    }
+
+    @Test
+    @DisplayName("Should classify row as LATE with String timestamp (ISO with millis and Z)")
+    void testSplitRows_withLateRow_StringIsoMillisZone() {
+        // Format lateTime as "yyyy-MM-ddTHH:mm:ss.SSSZ"
+        // Instant.toString() might have nanoseconds, Instant.parse handles it.
+        // Using truncatedTo ensures millisecond precision matching the example.
+        String lateTimeString = lateTime.truncatedTo(ChronoUnit.MILLIS).toString();
+        // Alternatively, force UTC and format:
+        // String lateTimeString = ISO_WITH_MILLIS_ZONE.format(lateTime); // ISO_INSTANT implicitly uses UTC
+
+        List<Map<String, Object>> rows = Collections.singletonList(createRow(56, lateTimeString));
+        RowSplitter.SplitResult result = RowSplitter.splitLateArrivingRows(Optional.of(rows), CONFIGURED_TABLE);
+
+        assertEquals(1, result.lateRows().size(), "Should be LATE based on ISO string with millis/zone");
+        assertEquals(0, result.regularRows().size());
+        assertEquals(56, result.lateRows().get(0).get("ID"));
+    }
+
+    @Test
+    @DisplayName("Should classify row as REGULAR with String timestamp (ISO with millis and Z)")
+    void testSplitRows_withRegularRow_StringIsoMillisZone() {
+        String regularTimeString = regularTime.truncatedTo(ChronoUnit.MILLIS).toString();
+        // Alternatively:
+        // String regularTimeString = ISO_WITH_MILLIS_ZONE.format(regularTime);
+
+        List<Map<String, Object>> rows = Collections.singletonList(createRow(57, regularTimeString));
+        RowSplitter.SplitResult result = RowSplitter.splitLateArrivingRows(Optional.of(rows), CONFIGURED_TABLE);
+
+        assertEquals(0, result.lateRows().size());
+        assertEquals(1, result.regularRows().size(), "Should be REGULAR based on ISO string with millis/zone");
+        assertEquals(57, result.regularRows().get(0).get("ID"));
+    }
+
+    @Test
+    @DisplayName("Should classify row as LATE with String timestamp (ISO without millis and zone, assuming UTC)")
+    void testSplitRows_withLateRow_StringIsoNoMillisZone() {
+        // Format lateTime as "yyyy-MM-ddTHH:mm:ss" assuming UTC interpretation
+        String lateTimeString = ISO_WITHOUT_MILLIS_ZONE.withZone(ZoneOffset.UTC).format(lateTime);
+
+        List<Map<String, Object>> rows = Collections.singletonList(createRow(58, lateTimeString));
+        RowSplitter.SplitResult result = RowSplitter.splitLateArrivingRows(Optional.of(rows), CONFIGURED_TABLE);
+
+        assertEquals(1, result.lateRows().size(), "Should be LATE based on ISO string without millis/zone (assuming UTC)");
+        assertEquals(0, result.regularRows().size());
+        assertEquals(58, result.lateRows().get(0).get("ID"));
+    }
+
+    @Test
+    @DisplayName("Should classify row as REGULAR with String timestamp (ISO without millis and zone, assuming UTC)")
+    void testSplitRows_withRegularRow_StringIsoNoMillisZone() {
+        // Format regularTime as "yyyy-MM-ddTHH:mm:ss" assuming UTC interpretation
+        String regularTimeString = ISO_WITHOUT_MILLIS_ZONE.withZone(ZoneOffset.UTC).format(regularTime);
+
+        List<Map<String, Object>> rows = Collections.singletonList(createRow(59, regularTimeString));
+        RowSplitter.SplitResult result = RowSplitter.splitLateArrivingRows(Optional.of(rows), CONFIGURED_TABLE);
+
+        assertEquals(0, result.lateRows().size());
+        assertEquals(1, result.regularRows().size(), "Should be REGULAR based on ISO string without millis/zone (assuming UTC)");
+        assertEquals(59, result.regularRows().get(0).get("ID"));
     }
 }
