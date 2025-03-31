@@ -18,10 +18,10 @@ class RowSplitterTest {
 
     // Constants matching RowSplitter configuration for clarity
     private static final String CONFIGURED_TABLE = "EDR_DATA";
-    private static final String TIMESTAMP_COLUMN = "GENERATEDTIME";
+    private static final String TIMESTAMP_COLUMN = "generatedTime";
     private static final String UNCONFIGURED_TABLE = "OTHER_TABLE";
     // Use the same threshold as defined in RowSplitter for consistency in tests
-    private static final Duration LATE_THRESHOLD_DURATION = Duration.ofHours(24);
+    private static final Duration LATE_THRESHOLD_DURATION = Duration.ofHours(12);
 
     private Instant now;
     private Instant lateTime;      // Clearly older than threshold
