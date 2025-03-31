@@ -22,15 +22,13 @@ public class RowSplitter {
   static Map<String, String> lateArrivingTableColumns = new HashMap<>();
 
   static {
-    lateArrivingTableColumns.put("EDR_DATA", "GENERATEDTIME");
-    lateArrivingTableColumns.put("AUTH_LOGS", "GENERATEDTIME");
-    lateArrivingTableColumns.put("PANW_NGFW_TRAFFIC_RAW", "_TIME");
-    lateArrivingTableColumns.put("PANW_NGFW_URL_RAW", "_TIME");
+    lateArrivingTableColumns.put("EDR_DATA", "generatedTime");
+    lateArrivingTableColumns.put("AUTH_LOGS", "generatedTime");
     // Add other table/column mappings here
   }
 
   // Define the threshold (e.g., 24 hours)
-  private static final Duration LATE_THRESHOLD_DURATION = Duration.ofHours(24);
+  private static final Duration LATE_THRESHOLD_DURATION = Duration.ofHours(12);
 
   // Result holder class
   public record SplitResult(List<Map<String, Object>> lateRows, List<Map<String, Object>> regularRows) {
@@ -79,6 +77,7 @@ public class RowSplitter {
       try {
         if (timestampObj == null) {
           // Treat rows with null timestamp as regular
+          LOGGER.info("Timestamp column is null for table {} timestamp column {}.", tableName, timestampColumnName);
           regularRows.add(row);
           continue; // Move to next row
         } else if (timestampObj instanceof Long) {
