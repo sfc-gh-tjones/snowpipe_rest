@@ -58,7 +58,7 @@ public class RowSplitter {
     }
 
     List<Map<String, Object>> allRows = rowsOptional.get();
-    String timestampColumnName = lateArrivingTableColumns.get(tableName);
+    String timestampColumnName = lateArrivingTableColumns.get(tableName.toUpperCase());
 
     // If table name not configured for late check, all rows are regular
     if (timestampColumnName == null) {
